@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react'
 import L from 'leaflet'
-import { TAG_MAP } from '../data/tags'
+import { getTagStyle } from '../data/tags'
 import { fmtPrice } from './CarpoolCard'
 import { fetchComments, createComment, removeComment } from '../api/comments'
 import { getPostApplications, acceptApplication, rejectApplication, cancelAcceptApplication, cancelRejectApplication } from '../api/applications'
@@ -229,12 +229,11 @@ export default function DetailModal({ post, onClose, onJoin, currentMemberId }) 
           </div>
           {post.tags?.length > 0 && (
             <div style={styles.tags}>
-              {post.tags.map(tid => {
-                const t = TAG_MAP[tid]
-                if (!t) return null
+              {post.tags.map(tag => {
+                const t = getTagStyle(tag?.name)
                 return (
-                  <span key={tid} style={{ ...styles.tagPill, background: t.bg, color: t.tc, borderColor: `${t.tc}22` }}>
-                    {t.emoji} {t.label}
+                  <span key={tag.id} style={{ ...styles.tagPill, background: t.bg, color: t.tc, borderColor: `${t.tc}22` }}>
+                    {t.emoji} {tag.name}
                   </span>
                 )
               })}

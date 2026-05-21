@@ -54,3 +54,13 @@ export async function updateLocation(rideId, latitude, longitude) {
   const res = await api.post(`/rides/${rideId}/location`, { latitude, longitude })
   return res.data
 }
+
+export async function getMyHistory() {
+  const res = await api.get('/rides/me/history')
+  return res.data
+}
+
+export async function getHistoryDetail(rideId) {
+  const res = await api.get(`/rides/${rideId}/history`)
+  return res.data
+}

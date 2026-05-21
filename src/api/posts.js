@@ -5,8 +5,18 @@ export async function fetchPosts() {
   return res.data
 }
 
+export async function getPostById(id) {
+  const res = await api.get(`/posts/${id}`)
+  return res.data
+}
+
 export async function createPost(payload) {
   const res = await api.post('/posts', payload)
+  return res.data
+}
+
+export async function updatePost(id, payload) {
+  const res = await api.patch(`/posts/${id}`, payload)
   return res.data
 }
 

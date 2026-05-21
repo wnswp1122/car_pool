@@ -1,5 +1,6 @@
-import React, { useState, useRef, useCallback } from 'react'
-import { ALL_TAGS } from '../data/tags'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
+import { getTagStyle } from '../data/tags'
+import { fetchTags } from '../api/tags'
 import { useIsMobile } from '../hooks/useMobile'
 import { searchPlace } from '../api/kakao'
 
@@ -12,8 +13,13 @@ export default function PostModal({ onClose, onSubmit }) {
     departureLat: null, departureLng: null,
     destinationLat: null, destinationLng: null,
   })
+  const [allTags, setAllTags] = useState([])
   const [selectedTags, setSelectedTags] = useState(new Set())
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    fetchTags().then(setAllTags).catch(() => {})
+  }, [])
 
   function set(key, val) {
     setForm(prev => ({ ...prev, [key]: val }))
@@ -118,13 +124,14 @@ export default function PostModal({ onClose, onSubmit }) {
             </span>
           </label>
           <div style={styles.tagPicker}>
-            {ALL_TAGS.map(t => {
-              const sel = selectedTags.has(t.id)
+            {allTags.map(tag => {
+              const t = getTagStyle(tag.name)
+              const sel = selectedTags.has(tag.id)
               return (
                 <button
-                  key={t.id}
+                  key={tag.id}
                   type="button"
-                  onClick={() => toggleTag(t.id)}
+                  onClick={() => toggleTag(tag.id)}
                   style={{
                     ...styles.tagPickBtn,
                     ...(sel
@@ -132,7 +139,7 @@ export default function PostModal({ onClose, onSubmit }) {
                       : { color: t.tc, borderColor: t.bg, background: `${t.bg}44` }),
                   }}
                 >
-                  {t.emoji} {t.label}
+                  {t.emoji} {tag.name}
                 </button>
               )
             })}

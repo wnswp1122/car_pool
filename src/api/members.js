@@ -5,6 +5,11 @@ export async function getMyProfile() {
   return res.data
 }
 
+export async function getProfileById(id) {
+  const res = await api.get(`/members/${id}`)
+  return res.data
+}
+
 export async function updateProfile({ nickname, currentPassword, newPassword }) {
   const body = {}
   if (nickname !== undefined) body.nickname = nickname

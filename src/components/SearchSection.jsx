@@ -1,12 +1,18 @@
-import React, { useState } from 'react'
-import { ALL_TAGS } from '../data/tags'
+import React, { useState, useEffect } from 'react'
+import { getTagStyle } from '../data/tags'
+import { fetchTags } from '../api/tags'
 import { useIsMobile } from '../hooks/useMobile'
 
 export default function SearchSection({ onSearch, onClear, selectedTagFilters, onToggleTag, onClearTags }) {
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
   const [date, setDate] = useState('')
+  const [allTags, setAllTags] = useState([])
   const isMobile = useIsMobile()
+
+  useEffect(() => {
+    fetchTags().then(setAllTags).catch(() => {})
+  }, [])
 
   function handleSearch() {
     onSearch({ from, to, date })
@@ -69,18 +75,19 @@ export default function SearchSection({ onSearch, onClear, selectedTagFilters, o
       <div style={styles.tagStripWrapper}>
         <span style={styles.tagLabel}>태그</span>
         <div className="tag-scroll" style={styles.tagScroll}>
-          {ALL_TAGS.map(t => {
-            const active = selectedTagFilters.has(t.id)
+          {allTags.map(tag => {
+            const t = getTagStyle(tag.name)
+            const active = selectedTagFilters.has(tag.id)
             return (
               <button
-                key={t.id}
-                onClick={() => onToggleTag(t.id)}
+                key={tag.id}
+                onClick={() => onToggleTag(tag.id)}
                 style={{
                   ...styles.tagBtn,
                   ...(active ? { background: t.bg, color: t.tc, border: `1.5px solid ${t.tc}`, fontWeight: 700 } : {}),
                 }}
               >
-                {t.emoji} {t.label}
+                {t.emoji} {tag.name}
               </button>
             )
           })}

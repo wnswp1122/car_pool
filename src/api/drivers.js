@@ -5,16 +5,12 @@ export async function getMyDriver() {
   return res.data
 }
 
-export async function registerDriver(vehicleOptionId, carNumber) {
-  const res = await api.post('/drivers', { vehicleOptionId, carNumber })
+export async function registerDriver(carModel, carColor, carNumber) {
+  const res = await api.post('/drivers', { carModel, carColor, carNumber })
   return res.data
 }
 
-export async function updateDriver(vehicleOptionId, carNumber) {
-  const res = await api.put('/drivers', { vehicleOptionId, carNumber })
+export async function updateDriver(carModel, carColor, carNumber) {
+  const res = await api.put('/drivers', { carModel, carColor, carNumber })
   return res.data
-}
-
-export async function deleteDriver() {
-  await api.delete('/drivers')
 }

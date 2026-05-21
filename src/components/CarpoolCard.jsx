@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { TAG_MAP } from '../data/tags'
+import { getTagStyle } from '../data/tags'
 
 function fmtDate(d) {
   if (!d) return ''
@@ -11,9 +11,8 @@ function fmtPrice(p) {
   return Number(p).toLocaleString() + '원'
 }
 
-function TagPill({ tagId, size = 'normal' }) {
-  const t = TAG_MAP[tagId]
-  if (!t) return null
+function TagPill({ tag, size = 'normal' }) {
+  const t = getTagStyle(tag?.name)
   const fs = size === 'small' ? '0.66rem' : '0.72rem'
   const pad = size === 'small' ? '0.15rem 0.42rem' : '0.22rem 0.6rem'
   return (
@@ -30,7 +29,7 @@ function TagPill({ tagId, size = 'normal' }) {
       color: t.tc,
       border: `1.5px solid ${t.tc}22`,
     }}>
-      {t.emoji} {t.label}
+      {t.emoji} {tag?.name}
     </span>
   )
 }
@@ -56,8 +55,8 @@ export default function CarpoolCard({ post, onOpen, onDelete, onClose, showDelet
         ...(isClosed ? { opacity: 0.8 } : {}),
       }}
       onClick={handleClick}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onPointerEnter={() => setHovered(true)}
+      onPointerLeave={() => setHovered(false)}
     >
       <div style={{ ...styles.topBar, opacity: hovered ? 1 : 0 }} />
       <div style={styles.cardHeader}>
@@ -95,7 +94,7 @@ export default function CarpoolCard({ post, onOpen, onDelete, onClose, showDelet
       </div>
       {post.tags?.length > 0 && (
         <div style={styles.tags}>
-          {post.tags.map(tid => <TagPill key={tid} tagId={tid} />)}
+          {post.tags.map(tag => <TagPill key={tag.id} tag={tag} />)}
         </div>
       )}
       {post.desc && <div style={styles.desc}>{post.desc}</div>}

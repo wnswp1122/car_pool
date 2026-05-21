@@ -72,7 +72,7 @@ export function useCarpool(memberId) {
     if (currentFilter === 'seats') f = f.filter(p => p.filled < p.seats)
     if (currentFilter === 'cheap') f = [...f].sort((a, b) => (Number(a.price) || 99999) - (Number(b.price) || 99999))
     if (selectedTagFilters.size > 0) {
-      f = f.filter(p => [...selectedTagFilters].every(tid => (p.tags || []).includes(tid)))
+      f = f.filter(p => [...selectedTagFilters].every(tid => (p.tags || []).some(tag => tag.id === tid)))
     }
     return f
   }, [posts, searchQuery, currentFilter, selectedTagFilters])
@@ -113,7 +113,7 @@ export function useCarpool(memberId) {
         description: form.desc || '',
         autoAccept: true,
         price: form.price ? Number(form.price) : null,
-        tags: form.tags || [],
+        tagIds: form.tags || [],
       })
       setPosts(prev => [normalizePost(created, memberId), ...prev])
       showToast('게시글이 등록되었습니다!')
