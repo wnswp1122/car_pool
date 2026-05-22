@@ -351,8 +351,8 @@ export default function App() {
                       onOpen={handleOpenDetail}
                       onDelete={deletePost}
                       onClose={async (id) => {
-                        const ride = await closePost(id)
-                        if (ride) navigate('/rides')
+                        const success = await closePost(id)
+                        if (success) navigate('/rides')
                       }}
                       showDelete
                       showClose={p.status === 'OPEN'}

@@ -50,7 +50,7 @@ export function useCarpool(memberId) {
     try {
       setLoading(true)
       const data = await fetchPosts()
-      setPosts(data.map(p => normalizePost(p, memberId)))
+      setPosts((data.content ?? data).map(p => normalizePost(p, memberId)))
     } catch {
       showToast('게시글을 불러오지 못했습니다.')
     } finally {
@@ -149,7 +149,7 @@ export function useCarpool(memberId) {
       const ride = await apiClosePost(id)
       setPosts(prev => prev.map(p => p.id === id ? { ...p, status: 'CLOSED' } : p))
       showToast('신청이 마감되었습니다. 운행 페이지에서 확인하세요!')
-      return ride
+      return true
     } catch (e) {
       showToast(e.message || '신청 마감에 실패했습니다.')
       return null
