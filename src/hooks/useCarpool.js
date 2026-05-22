@@ -146,7 +146,7 @@ export function useCarpool(memberId) {
 
   const closePost = useCallback(async (id) => {
     try {
-      const ride = await apiClosePost(id)
+      await apiClosePost(id)
       setPosts(prev => prev.map(p => p.id === id ? { ...p, status: 'CLOSED' } : p))
       showToast('신청이 마감되었습니다. 운행 페이지에서 확인하세요!')
       return true
