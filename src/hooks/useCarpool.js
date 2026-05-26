@@ -18,7 +18,7 @@ function normalizePost(post, memberId) {
     nickname: post.nickname || '익명',
     desc: post.description || '',
     color: COLORS[post.id % COLORS.length],
-    rating: '5.0',
+    rating: post.driverAverageRating != null ? post.driverAverageRating.toFixed(1) : '0.0',
     trips: 0,
     isMe: post.memberId === memberId,
     memberId: post.memberId,

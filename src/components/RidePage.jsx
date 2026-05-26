@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react'
 import { Client } from '@stomp/stompjs'
 import {
   getMyRidesAsDriver, getMyRidesAsPassenger, startRide, completeRide,
-  getPassengers, boardPassenger, dropOffPassenger,
+  getPassengers, boardPassenger, dropOffPassenger, getLocation,
 } from '../api/rides'
 import { getMyReviewForRide } from '../api/reviews'
 import ReviewModal from './ReviewModal'
@@ -188,9 +188,7 @@ function PassengerRow({ passenger, onBoard, onDropOff }) {
 
 function ActiveRidePanel({ ride, isDriver }) {
   const [passengers, setPassengers] = useState([])
-  const [driverPos, setDriverPos] = useState(
-    ride.currentLatitude && ride.currentLongitude ? [ride.currentLatitude, ride.currentLongitude] : null
-  )
+  const [driverPos, setDriverPos] = useState(null)
   const [connected, setConnected] = useState(false)
   const [err, setErr] = useState('')
   const stompRef = useRef(null)
@@ -203,6 +201,10 @@ function ActiveRidePanel({ ride, isDriver }) {
       getPassengers(ride.id)
         .then(data => setPassengers(data || []))
         .catch(() => setErr('탑승자 목록을 불러오지 못했습니다.'))
+    } else {
+      getLocation(ride.id)
+        .then(loc => { if (loc?.latitude && loc?.longitude) setDriverPos([loc.latitude, loc.longitude]) })
+        .catch(() => {})
     }
   }, [ride.id, isDriver])
 
@@ -212,8 +214,9 @@ function ActiveRidePanel({ ride, isDriver }) {
     if (!shouldConnect) return
 
     const token = localStorage.getItem('accessToken')
+    const wsProto = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
     const client = new Client({
-      brokerURL: 'ws://localhost:5173/ws',
+      brokerURL: `${wsProto}//${window.location.host}/ws`,
       connectHeaders: { Authorization: `Bearer ${token}` },
       reconnectDelay: 5000,
       onConnect: () => {

@@ -128,7 +128,8 @@ const appCardStyles = {
 
 function parseMemberId(token) {
   try {
-    return JSON.parse(atob(token.split('.')[1])).memberId
+    const b64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')
+    return JSON.parse(atob(b64)).memberId
   } catch {
     return null
   }
