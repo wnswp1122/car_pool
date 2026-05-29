@@ -89,8 +89,8 @@ export default function MapView({ posts, onOpenDetail }) {
     const kakao = window.kakao
     const map = new kakao.maps.Map(mapRef.current, {
       center: new kakao.maps.LatLng(37.5665, 126.9780),
-      level: 10,
-      maxLevel: 10,
+      level: 8,       // 서울 전체 보기 (줌인 가능)
+      maxLevel: 12,   // 최대 줌아웃
     })
     mapInstanceRef.current = map
     return () => { mapInstanceRef.current = null }
@@ -159,11 +159,9 @@ export default function MapView({ posts, onOpenDetail }) {
     destOverlay.setMap(map)
     destOverlayRef.current = destOverlay
 
-    // 지도 범위를 출발지-도착지에 맞게 조정
-    const bounds = new kakao.maps.LatLngBounds()
-    bounds.extend(new kakao.maps.LatLng(departureLat, departureLng))
-    bounds.extend(new kakao.maps.LatLng(destinationLat, destinationLng))
-    map.setBounds(bounds, 120)
+    // 출발지 중심으로 줌인 (경로 전체보다 출발 지점이 더 유용)
+    map.setCenter(new kakao.maps.LatLng(departureLat, departureLng))
+    map.setLevel(5)
   }, [sdkReady, selectedId, selectedPost])
 
   const handleSelectFromSidebar = useCallback((id) => {

@@ -1,52 +1,111 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react'
-import L from 'leaflet'
 import { getTagStyle } from '../data/tags'
 import { fmtPrice } from './CarpoolCard'
 import { fetchComments, createComment, removeComment } from '../api/comments'
 import { getPostApplications, acceptApplication, rejectApplication, cancelAcceptApplication, cancelRejectApplication } from '../api/applications'
 import { useIsMobile } from '../hooks/useMobile'
 
+const KAKAO_JS_KEY = import.meta.env.VITE_KAKAO_JS_KEY
+
+let sdkPromise = null
+function loadKakaoSDK() {
+  if (sdkPromise) return sdkPromise
+  sdkPromise = new Promise((resolve, reject) => {
+    if (window.kakao?.maps?.Map) { resolve(); return }
+    const script = document.createElement('script')
+    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_JS_KEY}&autoload=false`
+    script.onload = () => window.kakao.maps.load(resolve)
+    script.onerror = () => reject(new Error('카카오맵 SDK 로드 실패'))
+    document.head.appendChild(script)
+  })
+  return sdkPromise
+}
+
+async function fetchOsrmRoute(fromLat, fromLng, toLat, toLng) {
+  try {
+    const url = `https://router.project-osrm.org/route/v1/driving/${fromLng},${fromLat};${toLng},${toLat}?geometries=geojson&overview=full`
+    const res = await fetch(url)
+    const data = await res.json()
+    // OSRM은 [lng, lat] 순서로 반환 → [lat, lng] 로 swap
+    return data.routes?.[0]?.geometry?.coordinates?.map(([lng, lat]) => [lat, lng]) ?? null
+  } catch {
+    return null
+  }
+}
+
 function RouteMap({ fromLat, fromLng, toLat, toLng }) {
   const containerRef = useRef(null)
+  const [sdkReady, setSdkReady] = useState(!!window.kakao?.maps?.Map)
 
   useEffect(() => {
-    if (!containerRef.current) return
+    if (sdkReady) return
+    loadKakaoSDK().then(() => setSdkReady(true)).catch(() => {})
+  }, [sdkReady])
+
+  useEffect(() => {
+    if (!sdkReady || !containerRef.current) return
     const hasFrom = fromLat != null && fromLng != null
-    const hasTo = toLat != null && toLng != null
+    const hasTo   = toLat != null && toLng != null
     if (!hasFrom && !hasTo) return
 
-    const map = L.map(containerRef.current, { zoomControl: false, attributionControl: false })
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map)
+    const kakao = window.kakao
+    const center = hasFrom
+      ? new kakao.maps.LatLng(fromLat, fromLng)
+      : new kakao.maps.LatLng(toLat, toLng)
+    const map = new kakao.maps.Map(containerRef.current, { center, level: 6 })
 
-    const points = []
+    // 출발지 마커
     if (hasFrom) {
-      L.circleMarker([fromLat, fromLng], { radius: 9, color: '#6b7c3f', fillColor: '#6b7c3f', fillOpacity: 1, weight: 2 })
-        .bindTooltip('출발', { permanent: true, direction: 'top', offset: [0, -10] })
-        .addTo(map)
-      points.push([fromLat, fromLng])
+      const el = document.createElement('div')
+      el.innerHTML = `<div style="width:14px;height:14px;border-radius:50%;background:#6b7c3f;border:2.5px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3);"></div>`
+      new kakao.maps.CustomOverlay({ position: new kakao.maps.LatLng(fromLat, fromLng), content: el, yAnchor: 0.5 }).setMap(map)
     }
+    // 도착지 마커
     if (hasTo) {
-      L.circleMarker([toLat, toLng], { radius: 9, color: '#c0392b', fillColor: '#c0392b', fillOpacity: 1, weight: 2 })
-        .bindTooltip('도착', { permanent: true, direction: 'top', offset: [0, -10] })
-        .addTo(map)
-      points.push([toLat, toLng])
-    }
-    if (hasFrom && hasTo) {
-      L.polyline([[fromLat, fromLng], [toLat, toLng]], { color: '#6b7c3f', weight: 2, dashArray: '6,8' }).addTo(map)
-      map.fitBounds(points, { padding: [40, 40] })
-    } else {
-      map.setView(points[0], 14)
+      const el = document.createElement('div')
+      el.innerHTML = `<div style="width:14px;height:14px;border-radius:50%;background:#c0392b;border:2.5px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3);"></div>`
+      new kakao.maps.CustomOverlay({ position: new kakao.maps.LatLng(toLat, toLng), content: el, yAnchor: 0.5 }).setMap(map)
     }
 
-    return () => map.remove()
-  }, [fromLat, fromLng, toLat, toLng])
+    if (hasFrom && hasTo) {
+      const bounds = new kakao.maps.LatLngBounds()
+      bounds.extend(new kakao.maps.LatLng(fromLat, fromLng))
+      bounds.extend(new kakao.maps.LatLng(toLat, toLng))
+      map.setBounds(bounds, 40)
+
+      // OSRM 실제 도로 경로 그리기 (실패 시 직선 fallback)
+      fetchOsrmRoute(fromLat, fromLng, toLat, toLng).then(coords => {
+        const path = coords
+          ? coords.map(([lat, lng]) => new kakao.maps.LatLng(lat, lng))
+          : [new kakao.maps.LatLng(fromLat, fromLng), new kakao.maps.LatLng(toLat, toLng)]
+
+        new kakao.maps.Polyline({
+          path,
+          strokeWeight: 4,
+          strokeColor: '#6b7c3f',
+          strokeOpacity: 0.85,
+          strokeStyle: coords ? 'solid' : 'dashed', // 실제 경로는 실선, fallback은 점선
+        }).setMap(map)
+      })
+    }
+  }, [sdkReady, fromLat, fromLng, toLat, toLng])
 
   if (fromLat == null && toLat == null) return null
 
-  return <div ref={containerRef} style={mapStyle} />
+  return (
+    <div style={mapStyle}>
+      <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
+      {!sdkReady && (
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.82rem', color: 'var(--text-muted)', background: '#f5f5f0' }}>
+          지도 불러오는 중...
+        </div>
+      )}
+    </div>
+  )
 }
 
 const mapStyle = {
+  position: 'relative',
   height: 170,
   borderRadius: 10,
   overflow: 'hidden',
@@ -355,16 +414,39 @@ export default function DetailModal({ post, onClose, onJoin, currentMemberId }) 
             )}
           </div>
         ) : (
-          <button
-            style={{ ...styles.joinBtn, ...(full ? styles.joinBtnDisabled : {}) }}
-            disabled={full}
-            onClick={() => onJoin(post.id)}
-          >
-            {full ? '마감된 카풀입니다' : '참여 신청하기'}
-          </button>
+          <JoinButton full={full} onJoin={() => onJoin(post.id)} />
         )}
       </div>
     </div>
+  )
+}
+
+function JoinButton({ full, onJoin }) {
+  const [status, setStatus] = useState('idle') // idle | loading | done
+  async function handleClick() {
+    if (status !== 'idle') return
+    setStatus('loading')
+    await new Promise(r => setTimeout(r, 300))
+    setStatus('done')
+    await new Promise(r => setTimeout(r, 700))
+    onJoin()
+  }
+  const done = status === 'done'
+  const loading = status === 'loading'
+  return (
+    <button
+      style={{
+        ...styles.joinBtn,
+        ...(full || loading ? styles.joinBtnDisabled : {}),
+        ...(done ? { background: '#27ae60', borderColor: '#27ae60' } : {}),
+        transition: 'background 0.2s, transform 0.15s',
+        transform: done ? 'scale(1.02)' : 'scale(1)',
+      }}
+      disabled={full || loading}
+      onClick={handleClick}
+    >
+      {full ? '마감된 카풀입니다' : done ? '✓ 신청 완료!' : loading ? '신청 중...' : '참여 신청하기'}
+    </button>
   )
 }
 

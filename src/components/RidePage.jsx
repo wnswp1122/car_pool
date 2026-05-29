@@ -43,10 +43,17 @@ function makeDriverEl() {
   return d
 }
 
-function RideMap({ ride, driverPos }) {
+function makePassengerEl(num) {
+  const d = document.createElement('div')
+  d.innerHTML = `<div style="width:34px;height:34px;background:#3498db;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;font-size:13px;" title="탑승자 ${num}">🧍</div>`
+  return d
+}
+
+function RideMap({ ride, driverPos, passengerPositions, focusPos, large }) {
   const mapRef = useRef(null)
   const mapInstanceRef = useRef(null)
-  const overlaysRef = useRef([])
+  const driverOverlayRef = useRef(null)       // 드라이버 마커 (위치만 업데이트)
+  const passengerOverlaysRef = useRef([])     // 탑승자 마커들
   const [sdkReady, setSdkReady] = useState(false)
   const [error, setError] = useState(null)
 
@@ -54,6 +61,7 @@ function RideMap({ ride, driverPos }) {
     loadKakaoSDK().then(() => setSdkReady(true)).catch(e => setError(e.message))
   }, [])
 
+  // 지도 + 정적 마커(출발/도착) 초기화 — 한 번만
   useEffect(() => {
     if (!sdkReady || !mapRef.current) return
     const kakao = window.kakao
@@ -61,58 +69,81 @@ function RideMap({ ride, driverPos }) {
     const initLng = ride.departureLng || 126.9780
     const map = new kakao.maps.Map(mapRef.current, {
       center: new kakao.maps.LatLng(initLat, initLng),
-      level: 5,
+      level: 3,       // 더 가깝게 (동네 수준)
       maxLevel: 10,
     })
     mapInstanceRef.current = map
-    return () => { mapInstanceRef.current = null }
-  }, [sdkReady])
 
+    // 출발지/도착지 정적 마커
+    if (ride.departureLat && ride.departureLng) {
+      new kakao.maps.CustomOverlay({
+        position: new kakao.maps.LatLng(ride.departureLat, ride.departureLng),
+        content: makeDepEl('출발'), yAnchor: 1.1, zIndex: 3, map,
+      })
+    }
+    if (ride.destinationLat && ride.destinationLng) {
+      new kakao.maps.CustomOverlay({
+        position: new kakao.maps.LatLng(ride.destinationLat, ride.destinationLng),
+        content: makeDestEl('도착'), yAnchor: 1.1, zIndex: 3, map,
+      })
+    }
+    return () => { mapInstanceRef.current = null }
+  }, [sdkReady])  // ride 변경 시 재초기화 안 함
+
+  // 드라이버 마커 — 위치만 업데이트 (마커 새로 만들지 않음)
+  useEffect(() => {
+    const map = mapInstanceRef.current
+    if (!map || !sdkReady) return
+    const kakao = window.kakao
+    const pos = driverPos ? new kakao.maps.LatLng(driverPos[0], driverPos[1]) : null
+
+    if (!pos) {
+      if (driverOverlayRef.current) { driverOverlayRef.current.setMap(null); driverOverlayRef.current = null }
+      return
+    }
+    if (driverOverlayRef.current) {
+      driverOverlayRef.current.setPosition(pos)  // 기존 마커 위치만 이동 (깜빡임 없음)
+    } else {
+      driverOverlayRef.current = new kakao.maps.CustomOverlay({
+        position: pos, content: makeDriverEl(), yAnchor: 0.5, zIndex: 5, map,
+      })
+    }
+    // 지도가 드라이버 따라가도록 (네비 방식)
+    map.setCenter(pos)
+    map.setLevel(3)
+  }, [sdkReady, driverPos])
+
+  // 탑승자 마커들 — 위치 바뀔 때마다 업데이트
   useEffect(() => {
     const map = mapInstanceRef.current
     if (!map || !sdkReady) return
     const kakao = window.kakao
 
-    overlaysRef.current.forEach(o => o.setMap(null))
-    overlaysRef.current = []
+    passengerOverlaysRef.current.forEach(o => o.setMap(null))
+    passengerOverlaysRef.current = []
 
-    const bounds = new kakao.maps.LatLngBounds()
-    let pointCount = 0
+    if (passengerPositions && passengerPositions.size > 0) {
+      let pNum = 1
+      passengerPositions.forEach(([lat, lng]) => {
+        const ov = new kakao.maps.CustomOverlay({
+          position: new kakao.maps.LatLng(lat, lng),
+          content: makePassengerEl(pNum++), yAnchor: 0.5, zIndex: 4, map,
+        })
+        passengerOverlaysRef.current.push(ov)
+      })
+    }
+  }, [sdkReady, passengerPositions])
 
-    if (ride.departureLat && ride.departureLng) {
-      const pos = new kakao.maps.LatLng(ride.departureLat, ride.departureLng)
-      const ov = new kakao.maps.CustomOverlay({ position: pos, content: makeDepEl('출발'), yAnchor: 1.1, zIndex: 3 })
-      ov.setMap(map)
-      overlaysRef.current.push(ov)
-      bounds.extend(pos)
-      pointCount++
-    }
-    if (ride.destinationLat && ride.destinationLng) {
-      const pos = new kakao.maps.LatLng(ride.destinationLat, ride.destinationLng)
-      const ov = new kakao.maps.CustomOverlay({ position: pos, content: makeDestEl('도착'), yAnchor: 1.1, zIndex: 3 })
-      ov.setMap(map)
-      overlaysRef.current.push(ov)
-      bounds.extend(pos)
-      pointCount++
-    }
-    if (driverPos) {
-      const pos = new kakao.maps.LatLng(driverPos[0], driverPos[1])
-      const ov = new kakao.maps.CustomOverlay({ position: pos, content: makeDriverEl(), yAnchor: 0.5, zIndex: 5 })
-      ov.setMap(map)
-      overlaysRef.current.push(ov)
-      bounds.extend(pos)
-      pointCount++
-    }
-
-    if (pointCount >= 2) {
-      map.setBounds(bounds, 60)
-    } else if (driverPos) {
-      map.setCenter(new kakao.maps.LatLng(driverPos[0], driverPos[1]))
-    }
-  }, [sdkReady, ride, driverPos])
+  // 탑승자 클릭 시 해당 위치로 지도 이동
+  useEffect(() => {
+    const map = mapInstanceRef.current
+    if (!map || !sdkReady || !focusPos) return
+    map.setCenter(new window.kakao.maps.LatLng(focusPos[0], focusPos[1]))
+    map.setLevel(3)
+  }, [sdkReady, focusPos])
 
   return (
-    <div style={{ height: 260, borderRadius: 12, overflow: 'hidden', border: '1px solid var(--border)', background: '#f5f5f0', position: 'relative' }}>
+    <div style={{ height: large ? 480 : 260, borderRadius: 12, overflow: 'hidden', border: '1px solid var(--border)', background: '#f5f5f0', position: 'relative' }}>
       <div ref={mapRef} style={{ height: '100%', width: '100%' }} />
       {!sdkReady && !error && (
         <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
@@ -166,29 +197,38 @@ const PASSENGER_STATUS_MAP = {
   DROPPED_OFF:{ label: '하차 완료', color: 'var(--accent)' },
 }
 
-function PassengerRow({ passenger, onBoard, onDropOff }) {
+function PassengerRow({ passenger, onBoard, onDropOff, hasPos, onFocus }) {
   const { label, color } = PASSENGER_STATUS_MAP[passenger.status] || { label: passenger.status, color: 'var(--text-muted)' }
   return (
-    <div style={styles.passengerRow}>
+    <div
+      style={{ ...styles.passengerRow, cursor: hasPos ? 'pointer' : 'default' }}
+      onClick={() => hasPos && onFocus && onFocus(passenger.passengerId)}
+      title={hasPos ? '클릭하면 탑승자 위치로 지도 이동' : ''}
+    >
       <div style={{ flex: 1 }}>
-        <div style={styles.passengerId}>승객 #{passenger.passengerId}</div>
+        <div style={styles.passengerId}>
+          승객 #{passenger.passengerId}
+          {hasPos && <span style={{ fontSize: '0.65rem', color: '#3498db', marginLeft: 6 }}>📍 위치 확인</span>}
+        </div>
         <span style={{ fontSize: '0.75rem', color, fontWeight: 700 }}>{label}</span>
       </div>
       <div style={{ display: 'flex', gap: '0.4rem' }}>
         {passenger.status === 'PENDING' && (
-          <button style={styles.smallBtn} onClick={() => onBoard(passenger.applicationId)}>탑승 확인</button>
+          <button style={styles.smallBtn} onClick={e => { e.stopPropagation(); onBoard(passenger.applicationId) }}>탑승 확인</button>
         )}
         {passenger.status === 'BOARDED' && (
-          <button style={{ ...styles.smallBtn, ...styles.smallBtnDanger }} onClick={() => onDropOff(passenger.applicationId)}>하차 확인</button>
+          <button style={{ ...styles.smallBtn, ...styles.smallBtnDanger }} onClick={e => { e.stopPropagation(); onDropOff(passenger.applicationId) }}>하차 확인</button>
         )}
       </div>
     </div>
   )
 }
 
-function ActiveRidePanel({ ride, isDriver }) {
+function ActiveRidePanel({ ride, isDriver, large }) {
   const [passengers, setPassengers] = useState([])
   const [driverPos, setDriverPos] = useState(null)
+  const [passengerPositions, setPassengerPositions] = useState(new Map()) // passengerId → [lat, lng]
+  const [focusPos, setFocusPos] = useState(null)
   const [connected, setConnected] = useState(false)
   const [err, setErr] = useState('')
   const stompRef = useRef(null)
@@ -208,6 +248,15 @@ function ActiveRidePanel({ ride, isDriver }) {
     }
   }, [ride.id, isDriver])
 
+  // 운행 중 탑승자 상태 3초마다 자동 갱신 (K6 탑승/하차 처리 즉시 반영)
+  useEffect(() => {
+    if (!isDriver || ride.status !== 'IN_PROGRESS') return
+    const interval = setInterval(() => {
+      getPassengers(ride.id).then(data => setPassengers(data || [])).catch(() => {})
+    }, 3000)
+    return () => clearInterval(interval)
+  }, [ride.id, ride.status, isDriver])
+
   useEffect(() => {
     const isActive = ride.status === 'IN_PROGRESS'
     const shouldConnect = isActive || (ride.status === 'SCHEDULED' && withinWindow)
@@ -222,11 +271,11 @@ function ActiveRidePanel({ ride, isDriver }) {
       onConnect: () => {
         setConnected(true)
         if (isDriver) {
+          // 드라이버: 내 위치를 탑승자들에게 전송 (실제 GPS)
           const sendLocation = () => {
             if (!navigator.geolocation || !client.connected) return
             navigator.geolocation.getCurrentPosition(pos => {
               const { latitude, longitude } = pos.coords
-              setDriverPos([latitude, longitude])
               client.publish({
                 destination: `/app/ride/${ride.id}/location`,
                 body: JSON.stringify({ latitude, longitude }),
@@ -235,11 +284,42 @@ function ActiveRidePanel({ ride, isDriver }) {
           }
           sendLocation()
           geoIntervalRef.current = setInterval(sendLocation, 5000)
-        } else {
+
+          // 드라이버: 서버에서 브로드캐스트된 내 위치 수신 → 지도에 표시 (K6 시뮬레이션 포함)
           client.subscribe(`/topic/ride/${ride.id}`, msg => {
             const loc = JSON.parse(msg.body)
             setDriverPos([loc.latitude, loc.longitude])
           })
+
+          // 드라이버: 탑승자 위치 구독
+          client.subscribe(`/topic/ride/${ride.id}/passengers`, msg => {
+            const loc = JSON.parse(msg.body)
+            setPassengerPositions(prev => {
+              const next = new Map(prev)
+              next.set(loc.passengerId, [loc.latitude, loc.longitude])
+              return next
+            })
+          })
+        } else {
+          // 탑승자: 드라이버 위치 구독
+          client.subscribe(`/topic/ride/${ride.id}`, msg => {
+            const loc = JSON.parse(msg.body)
+            setDriverPos([loc.latitude, loc.longitude])
+          })
+
+          // 탑승자: 내 위치를 드라이버에게 전송
+          const sendPassengerLocation = () => {
+            if (!navigator.geolocation || !client.connected) return
+            navigator.geolocation.getCurrentPosition(pos => {
+              const { latitude, longitude } = pos.coords
+              client.publish({
+                destination: `/app/ride/${ride.id}/passenger-location`,
+                body: JSON.stringify({ latitude, longitude }),
+              })
+            })
+          }
+          sendPassengerLocation()
+          geoIntervalRef.current = setInterval(sendPassengerLocation, 5000)
         }
       },
       onDisconnect: () => { setConnected(false) },
@@ -297,7 +377,7 @@ function ActiveRidePanel({ ride, isDriver }) {
 
       {err && <div style={styles.errorBox}>{err}</div>}
 
-      <RideMap ride={ride} driverPos={driverPos} />
+      <RideMap ride={ride} driverPos={driverPos} passengerPositions={isDriver ? passengerPositions : null} focusPos={focusPos} large={large} />
 
       {isDriver && (
         <div style={{ marginTop: '1rem' }}>
@@ -309,7 +389,14 @@ function ActiveRidePanel({ ride, isDriver }) {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               {passengers.map(p => (
-                <PassengerRow key={p.id} passenger={p} onBoard={handleBoard} onDropOff={handleDropOff} />
+                <PassengerRow
+                  key={p.id}
+                  passenger={p}
+                  onBoard={handleBoard}
+                  onDropOff={handleDropOff}
+                  hasPos={passengerPositions.has(p.passengerId)}
+                  onFocus={pid => { const pos = passengerPositions.get(pid); if (pos) setFocusPos([...pos]) }}
+                />
               ))}
             </div>
           )}
@@ -418,6 +505,7 @@ export default function RidePage() {
   const [loadingDriver, setLoadingDriver] = useState(true)
   const [loadingPassenger, setLoadingPassenger] = useState(true)
   const [error, setError] = useState('')
+  const [tab, setTab] = useState('map') // 'map' | 'history'
 
   const activeDriverRide = driverRides.find(r => r.status === 'IN_PROGRESS' || r.status === 'SCHEDULED') ?? null
   const activePassengerRide = passengerRides.find(r => r.status === 'IN_PROGRESS' || r.status === 'SCHEDULED') ?? null
@@ -437,6 +525,14 @@ export default function RidePage() {
 
   useEffect(() => { loadRides() }, [loadRides])
 
+  // SCHEDULED 운행이 있으면 5초마다 자동 폴링 → IN_PROGRESS 전환 시 새로고침 없이 지도 표시
+  useEffect(() => {
+    const hasScheduled = [...driverRides, ...passengerRides].some(r => r.status === 'SCHEDULED')
+    if (!hasScheduled) return
+    const interval = setInterval(loadRides, 5000)
+    return () => clearInterval(interval)
+  }, [driverRides, passengerRides, loadRides])
+
   async function handleStart(rideId) {
     try {
       const updated = await startRide(rideId)
@@ -455,64 +551,114 @@ export default function RidePage() {
     }
   }
 
+  const hasActive = activeDriverRide || activePassengerRide
+
   return (
     <div style={styles.page}>
       {error && <div style={styles.errorBox}>{error}</div>}
 
-      {activeDriverRide && (
-        <ActiveRidePanel ride={activeDriverRide} isDriver />
-      )}
-      {activePassengerRide && (
-        <ActiveRidePanel ride={activePassengerRide} isDriver={false} />
+      {/* 탭 헤더 */}
+      <div style={styles.tabBar}>
+        <button
+          style={{ ...styles.tabBtn, ...(tab === 'map' ? styles.tabBtnActive : {}) }}
+          onClick={() => setTab('map')}
+        >
+          📍 실시간 운행
+          {hasActive && <span style={styles.tabDot} />}
+        </button>
+        <button
+          style={{ ...styles.tabBtn, ...(tab === 'history' ? styles.tabBtnActive : {}) }}
+          onClick={() => setTab('history')}
+        >
+          📋 운행 이력
+        </button>
+      </div>
+
+      {/* 지도 운행 탭 */}
+      {tab === 'map' && (
+        <div>
+          {activeDriverRide && (
+            <ActiveRidePanel ride={activeDriverRide} isDriver large />
+          )}
+          {activePassengerRide && (
+            <ActiveRidePanel ride={activePassengerRide} isDriver={false} large />
+          )}
+          {!hasActive && (
+            <div style={{ ...styles.card, textAlign: 'center', padding: '3rem 1rem' }}>
+              <div style={{ fontSize: '3rem', marginBottom: '0.8rem', opacity: 0.3 }}>🗺️</div>
+              <p style={styles.emptyText}>현재 활성 운행이 없습니다</p>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.4rem' }}>
+                운행이 시작되면 여기에 지도가 표시됩니다
+              </p>
+            </div>
+          )}
+        </div>
       )}
 
-      <section style={styles.card}>
-        <div style={styles.cardHeader}>
-          <div style={styles.dot} />
-          <h2 style={styles.cardTitle}>내 운행 (드라이버)</h2>
-        </div>
-        {loadingDriver ? (
-          <div style={styles.empty}><p style={styles.emptyText}>불러오는 중...</p></div>
-        ) : driverRides.length === 0 ? (
-          <div style={styles.empty}>
-            <div style={styles.emptyIcon}>🚗</div>
-            <p style={styles.emptyText}>등록된 운행이 없습니다</p>
-          </div>
-        ) : (
-          <div style={styles.rideList}>
-            {driverRides.map(r => (
-              <RideCard key={r.id} ride={r} isDriver onStart={handleStart} onComplete={handleComplete} />
-            ))}
-          </div>
-        )}
-      </section>
+      {/* 운행 이력 탭 */}
+      {tab === 'history' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          <section style={styles.card}>
+            <div style={styles.cardHeader}>
+              <div style={styles.dot} />
+              <h2 style={styles.cardTitle}>내 운행 이력 (드라이버)</h2>
+            </div>
+            {loadingDriver ? (
+              <div style={styles.empty}><p style={styles.emptyText}>불러오는 중...</p></div>
+            ) : driverRides.filter(r => r.status === 'COMPLETED').length === 0 ? (
+              <div style={styles.empty}>
+                <div style={styles.emptyIcon}>🚗</div>
+                <p style={styles.emptyText}>완료된 운행이 없습니다</p>
+              </div>
+            ) : (
+              <div style={styles.rideList}>
+                {driverRides.filter(r => r.status === 'COMPLETED').map(r => (
+                  <RideCard key={r.id} ride={r} isDriver onStart={handleStart} onComplete={handleComplete} />
+                ))}
+              </div>
+            )}
+          </section>
 
-      <section style={styles.card}>
-        <div style={styles.cardHeader}>
-          <div style={styles.dot} />
-          <h2 style={styles.cardTitle}>내 탑승 내역 (승객)</h2>
+          <section style={styles.card}>
+            <div style={styles.cardHeader}>
+              <div style={styles.dot} />
+              <h2 style={styles.cardTitle}>내 탑승 이력 (승객)</h2>
+            </div>
+            {loadingPassenger ? (
+              <div style={styles.empty}><p style={styles.emptyText}>불러오는 중...</p></div>
+            ) : passengerRides.filter(r => r.status === 'COMPLETED').length === 0 ? (
+              <div style={styles.empty}>
+                <div style={styles.emptyIcon}>🧳</div>
+                <p style={styles.emptyText}>탑승 이력이 없습니다</p>
+              </div>
+            ) : (
+              <div style={styles.rideList}>
+                {passengerRides.filter(r => r.status === 'COMPLETED').map(r => (
+                  <RideCard key={r.id} ride={r} isDriver={false} />
+                ))}
+              </div>
+            )}
+          </section>
         </div>
-        {loadingPassenger ? (
-          <div style={styles.empty}><p style={styles.emptyText}>불러오는 중...</p></div>
-        ) : passengerRides.length === 0 ? (
-          <div style={styles.empty}>
-            <div style={styles.emptyIcon}>🧳</div>
-            <p style={styles.emptyText}>탑승 내역이 없습니다</p>
-          </div>
-        ) : (
-          <div style={styles.rideList}>
-            {passengerRides.map(r => (
-              <RideCard key={r.id} ride={r} isDriver={false} />
-            ))}
-          </div>
-        )}
-      </section>
+      )}
     </div>
   )
 }
 
 const styles = {
-  page: { display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: 720 },
+  page: { display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: 900 },
+  tabBar: { display: 'flex', gap: '0.5rem', borderBottom: '2px solid var(--border)', paddingBottom: '0' },
+  tabBtn: {
+    position: 'relative', background: 'none', border: 'none',
+    padding: '0.65rem 1.2rem', fontSize: '0.9rem', fontWeight: 600,
+    color: 'var(--text-muted)', cursor: 'pointer', borderRadius: '8px 8px 0 0',
+    borderBottom: '2px solid transparent', marginBottom: '-2px',
+  },
+  tabBtnActive: { color: 'var(--accent)', borderBottom: '2px solid var(--accent)', background: 'var(--accent-pale)' },
+  tabDot: {
+    position: 'absolute', top: 8, right: 8,
+    width: 7, height: 7, borderRadius: '50%', background: '#27ae60',
+  },
   card: { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: '1.5rem' },
   cardHeader: { display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.2rem' },
   dot: { width: 7, height: 7, background: 'var(--accent)', borderRadius: '50%', flexShrink: 0 },

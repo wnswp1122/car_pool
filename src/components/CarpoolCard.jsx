@@ -1,10 +1,11 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { getTagStyle } from '../data/tags'
 
+const DAYS = ['일', '월', '화', '수', '목', '금', '토']
 function fmtDate(d) {
   if (!d) return ''
   const dt = new Date(d)
-  return `${dt.getMonth() + 1}/${dt.getDate()}`
+  return `${dt.getMonth() + 1}/${dt.getDate()}(${DAYS[dt.getDay()]})`
 }
 function fmtPrice(p) {
   if (!p || p === '') return '무료'
@@ -40,25 +41,17 @@ export default function CarpoolCard({ post, onOpen, onDelete, onClose, showDelet
   const avail = post.seats - post.filled
   const full = avail <= 0
   const isClosed = post.status === 'CLOSED'
-  const [hovered, setHovered] = useState(false)
-
-  function handleClick() {
-    setHovered(false)
-    onOpen(post.id)
-  }
 
   return (
     <div
+      className="carpool-card"
       style={{
         ...styles.card,
-        ...(hovered ? styles.cardHovered : {}),
         ...(isClosed ? { opacity: 0.8 } : {}),
       }}
-      onClick={handleClick}
-      onPointerEnter={() => setHovered(true)}
-      onPointerLeave={() => setHovered(false)}
+      onClick={() => onOpen(post.id)}
     >
-      <div style={{ ...styles.topBar, opacity: hovered ? 1 : 0 }} />
+      <div className="carpool-card-topbar" style={styles.topBar} />
       <div style={styles.cardHeader}>
         <div style={styles.routeRow}>
           <span>{post.from}</span>
@@ -110,7 +103,7 @@ export default function CarpoolCard({ post, onOpen, onDelete, onClose, showDelet
         </div>
         <div style={styles.price}>
           {fmtPrice(post.price)}
-          {post.price && post.price !== '' && <span style={styles.priceSub}>/인</span>}
+          {!!post.price && <span style={styles.priceSub}>/인</span>}
         </div>
       </div>
     </div>
@@ -124,16 +117,10 @@ const styles = {
     borderRadius: 16,
     padding: '1.3rem',
     cursor: 'pointer',
-    transition: 'box-shadow 0.25s, border-color 0.25s, transform 0.2s',
     boxShadow: 'var(--card-glow)',
     position: 'relative',
     overflow: 'hidden',
     outline: 'none',
-  },
-  cardHovered: {
-    borderColor: 'var(--accent)',
-    boxShadow: '0 8px 32px rgba(107, 124, 63, 0.18)',
-    transform: 'translateY(-2px)',
   },
   topBar: {
     position: 'absolute',

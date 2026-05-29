@@ -80,11 +80,153 @@ const db = {
       status: 'OPEN', autoAccept: true, price: 2000,
       tags: [TAGS[0], TAGS[4]], createdAt: new Date().toISOString(),
     },
+    {
+      id: 5, memberId: 1, nickname: '테스트유저', driverAverageRating: 4.8,
+      title: '선릉역 → 수원역',
+      departureLocation: '선릉역 3번 출구', destinationLocation: '수원역 환승센터',
+      departureLat: 37.5045, departureLng: 127.0495,
+      destinationLat: 37.2636, destinationLng: 127.0286,
+      departureTime: new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString(),
+      maxPassengers: 4, currentPassengers: 1,
+      status: 'OPEN', autoAccept: false, price: 8000,
+      tags: [TAGS[0], TAGS[2]], createdAt: new Date().toISOString(),
+    },
+    // 시나리오: 자리 꽉 찬 게시글 (magang 표시 테스트)
+    {
+      id: 6, memberId: 5, nickname: '최수진', driverAverageRating: 4.0,
+      title: '서울역 → 인천공항',
+      departureLocation: '서울역 버스환승센터', destinationLocation: '인천국제공항 T1',
+      departureLat: 37.5547, departureLng: 126.9706,
+      destinationLat: 37.4491, destinationLng: 126.4510,
+      departureTime: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
+      maxPassengers: 2, currentPassengers: 2,
+      status: 'OPEN', autoAccept: true, price: 15000,
+      tags: [TAGS[0], TAGS[4]], createdAt: new Date().toISOString(),
+    },
+    // 시나리오: CLOSED 게시글
+    {
+      id: 7, memberId: 6, nickname: '정민영', driverAverageRating: 4.6,
+      title: '건대입구 → 성수역',
+      departureLocation: '건대입구역 5번 출구', destinationLocation: '성수역 2번 출구',
+      departureLat: 37.5403, departureLng: 127.0694,
+      destinationLat: 37.5444, destinationLng: 127.0558,
+      departureTime: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+      maxPassengers: 3, currentPassengers: 2,
+      status: 'CLOSED', autoAccept: true, price: 1000,
+      tags: [TAGS[2]], createdAt: new Date().toISOString(),
+    },
+    // 시나리오: 좌표 없는 게시글 (지도 마커 미표시 테스트)
+    {
+      id: 8, memberId: 7, nickname: '한도연', driverAverageRating: 0.0,
+      title: '분당 → 판교',
+      departureLocation: '분당 서현역', destinationLocation: '판교 현대백화점',
+      departureLat: null, departureLng: null,
+      destinationLat: null, destinationLng: null,
+      departureTime: new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString(),
+      maxPassengers: 3, currentPassengers: 0,
+      status: 'OPEN', autoAccept: true, price: 0,
+      tags: [], createdAt: new Date().toISOString(),
+    },
   ],
-  comments: { 1: [], 2: [], 3: [], 4: [] },
-  applications: { 1: [], 2: [], 3: [], 4: [] },
-  myApplications: [],
-  rides: { driver: [], passenger: [] },
+  comments: {
+    1: [
+      { id: 51, postId: 1, memberId: 2, nickname: '김민준', content: '판교 KT 본사 앞에서 내릴 수 있나요?', createdAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(), updatedAt: new Date(Date.now() - 30 * 60 * 1000).toISOString() },
+      { id: 52, postId: 1, memberId: 1, nickname: '테스트유저', content: '네, 가능합니다!', createdAt: new Date(Date.now() - 20 * 60 * 1000).toISOString(), updatedAt: new Date(Date.now() - 20 * 60 * 1000).toISOString() },
+    ],
+    2: [],
+    3: [
+      { id: 53, postId: 3, memberId: 1, nickname: '테스트유저', content: '짐이 캐리어 하나인데 괜찮나요?', createdAt: new Date(Date.now() - 10 * 60 * 1000).toISOString(), updatedAt: new Date(Date.now() - 10 * 60 * 1000).toISOString() },
+    ],
+    4: [], 5: [], 6: [], 7: [], 8: [],
+  },
+  applications: {
+    // 내 게시글(id:1)에 온 신청들 — 신청 관리 UI 테스트
+    1: [
+      { id: 61, postId: 1, applicantId: 2, applicantNickname: '김민준', status: 'PENDING',  createdAt: new Date(Date.now() - 20 * 60 * 1000).toISOString() },
+      { id: 62, postId: 1, applicantId: 3, applicantNickname: '이서연', status: 'ACCEPTED', createdAt: new Date(Date.now() - 40 * 60 * 1000).toISOString() },
+      { id: 63, postId: 1, applicantId: 4, applicantNickname: '박지호', status: 'REJECTED', createdAt: new Date(Date.now() - 60 * 60 * 1000).toISOString() },
+    ],
+    2: [], 3: [], 4: [],
+    // 내 게시글(id:5)에 온 신청들
+    5: [
+      { id: 64, postId: 5, applicantId: 2, applicantNickname: '김민준', status: 'PENDING', createdAt: new Date(Date.now() - 5 * 60 * 1000).toISOString() },
+    ],
+    6: [], 7: [], 8: [],
+  },
+  // 내가 신청한 카풀 내역 — "내가 신청한 카풀" 탭 테스트
+  myApplications: [
+    { id: 71, postId: 2, applicantId: 1, status: 'PENDING',  createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString() },
+    { id: 72, postId: 3, applicantId: 1, status: 'ACCEPTED', createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString() },
+    { id: 73, postId: 6, applicantId: 1, status: 'REJECTED', createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString() },
+  ],
+  rides: {
+    driver: [
+      {
+        id: 201, postId: 1, driverId: 1,
+        status: 'SCHEDULED',
+        departureTime: new Date(Date.now() + 25 * 60 * 1000).toISOString(), // 25분 후
+        startedAt: null, completedAt: null,
+        departureLocation: '강남역 3번 출구',
+        departureLat: 37.4979, departureLng: 127.0276,
+        destinationLocation: '판교역 2번 출구',
+        destinationLat: 37.3943, destinationLng: 127.1110,
+      },
+      {
+        id: 202, postId: 5, driverId: 1,
+        status: 'IN_PROGRESS',
+        departureTime: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
+        startedAt: new Date(Date.now() - 8 * 60 * 1000).toISOString(),
+        completedAt: null,
+        departureLocation: '선릉역 3번 출구',
+        departureLat: 37.5045, departureLng: 127.0495,
+        destinationLocation: '수원역 환승센터',
+        destinationLat: 37.2636, destinationLng: 127.0286,
+      },
+      {
+        id: 203, postId: 1, driverId: 1,
+        status: 'COMPLETED',
+        departureTime: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+        startedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000 + 5 * 60 * 1000).toISOString(),
+        completedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000 + 45 * 60 * 1000).toISOString(),
+        departureLocation: '강남역 3번 출구',
+        departureLat: 37.4979, departureLng: 127.0276,
+        destinationLocation: '판교역 2번 출구',
+        destinationLat: 37.3943, destinationLng: 127.1110,
+      },
+    ],
+    passenger: [
+      {
+        id: 301, postId: 2, driverId: 2,
+        status: 'COMPLETED',
+        departureTime: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+        startedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000 + 3 * 60 * 1000).toISOString(),
+        completedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000 + 40 * 60 * 1000).toISOString(),
+        departureLocation: '홍대입구역 9번 출구',
+        departureLat: 37.5572, departureLng: 126.9247,
+        destinationLocation: '여의도역 1번 출구',
+        destinationLat: 37.5215, destinationLng: 126.9242,
+      },
+      {
+        id: 302, postId: 3, driverId: 3,
+        status: 'SCHEDULED',
+        departureTime: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString(),
+        startedAt: null, completedAt: null,
+        departureLocation: '신촌역 2번 출구',
+        departureLat: 37.5552, departureLng: 126.9369,
+        destinationLocation: '구로디지털단지역',
+        destinationLat: 37.4851, destinationLng: 126.9012,
+      },
+    ],
+  },
+  passengers: {
+    202: [
+      { id: 401, applicationId: 401, passengerId: 2, status: 'BOARDED' },
+      { id: 402, applicationId: 402, passengerId: 3, status: 'PENDING' },
+    ],
+    201: [
+      { id: 403, applicationId: 403, passengerId: 4, status: 'PENDING' },
+    ],
+  },
   reviews: {},
 }
 
@@ -265,6 +407,10 @@ export function mockPlugin() {
           const postId = Number(applyMatch[1])
           if (!(postId in db.applications)) db.applications[postId] = []
           if (method === 'POST') {
+            const post = db.posts.find(p => p.id === postId)
+            if (post?.memberId === 1) {
+              return send(res, 400, api('자신이 등록한 카풀에는 신청할 수 없습니다.'))
+            }
             const app = {
               id: genId(), postId, applicantId: 1,
               applicantNickname: db.profile.nickname,
@@ -272,7 +418,6 @@ export function mockPlugin() {
             }
             db.applications[postId].push(app)
             db.myApplications.push(app)
-            const post = db.posts.find(p => p.id === postId)
             if (post) post.currentPassengers++
             return send(res, 201, api('카풀 신청이 완료되었습니다.', app))
           }
@@ -355,7 +500,7 @@ export function mockPlugin() {
           return send(res, 200, api('내 탑승 내역 조회 성공', db.rides.passenger))
         }
         if (method === 'GET' && path === '/rides/me/history') {
-          return send(res, 200, api('운행 이력 조회 성공', []))
+          return send(res, 200, api('운행 이력 조회 성공', [...db.rides.driver, ...db.rides.passenger]))
         }
         if (method === 'POST' && path === '/rides') {
           const body = await readBody(req)
@@ -389,8 +534,15 @@ export function mockPlugin() {
           const action = rideStartMatch[2]
           const ride = db.rides.driver.find(r => r.id === id)
           if (!ride) return send(res, 404, api('운행을 찾을 수 없습니다.'))
-          if (action === 'start') { ride.status = 'IN_PROGRESS'; ride.startedAt = new Date().toISOString() }
-          if (action === 'complete') { ride.status = 'COMPLETED'; ride.completedAt = new Date().toISOString() }
+          if (action === 'start') {
+            ride.status = 'IN_PROGRESS'
+            ride.startedAt = new Date().toISOString()
+            if (!db.passengers[id]) db.passengers[id] = []
+          }
+          if (action === 'complete') {
+            ride.status = 'COMPLETED'
+            ride.completedAt = new Date().toISOString()
+          }
           const msg = action === 'start' ? '운행이 시작되었습니다.' : '운행이 종료되었습니다.'
           return send(res, 200, api(msg, ride))
         }
@@ -402,12 +554,19 @@ export function mockPlugin() {
 
         const passengersMatch = path.match(/^\/rides\/(\d+)\/passengers$/)
         if (passengersMatch && method === 'GET') {
-          return send(res, 200, api('탑승자 목록 조회 성공', []))
+          const rideId = Number(passengersMatch[1])
+          return send(res, 200, api('탑승자 목록 조회 성공', db.passengers[rideId] || []))
         }
 
         const boardMatch = path.match(/^\/rides\/(\d+)\/passengers\/(\d+)\/(board|dropoff)$/)
         if (boardMatch && method === 'POST') {
-          return send(res, 200, api('확인되었습니다.', { id: genId(), applicationId: Number(boardMatch[2]), passengerId: 2, status: boardMatch[3] === 'board' ? 'BOARDED' : 'DROPPED_OFF' }))
+          const rideId = Number(boardMatch[1])
+          const appId = Number(boardMatch[2])
+          const newStatus = boardMatch[3] === 'board' ? 'BOARDED' : 'DROPPED_OFF'
+          const list = db.passengers[rideId] || []
+          const p = list.find(x => x.applicationId === appId)
+          if (p) p.status = newStatus
+          return send(res, 200, api('확인되었습니다.', p || { id: genId(), applicationId: appId, passengerId: 2, status: newStatus }))
         }
 
         const rideHistoryMatch = path.match(/^\/rides\/(\d+)\/history$/)

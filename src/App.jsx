@@ -270,8 +270,13 @@ export default function App() {
                   ].map(f => (
                     <button
                       key={f.key}
-                      style={{ ...styles.filterChip, ...(currentFilter === f.key ? styles.filterChipActive : {}) }}
-                      onClick={() => setCurrentFilter(f.key)}
+                      style={{
+                        ...styles.filterChip,
+                        borderColor: currentFilter === f.key && f.key !== 'all' ? 'var(--accent)' : 'var(--border)',
+                        color: currentFilter === f.key && f.key !== 'all' ? 'var(--accent)' : 'var(--text-muted)',
+                        background: currentFilter === f.key && f.key !== 'all' ? 'var(--accent-pale)' : 'none',
+                      }}
+                      onClick={() => setCurrentFilter(f.key === 'all' || currentFilter === f.key ? 'all' : f.key)}
                     >
                       {f.label}
                     </button>
@@ -303,8 +308,26 @@ export default function App() {
               <div style={styles.cardsGrid}>
                 {filteredPosts.length === 0 ? (
                   <div style={styles.emptyState}>
-                    <div style={{ fontSize: '2.5rem', marginBottom: '1rem', opacity: 0.4 }}>🚗</div>
-                    <p>조건에 맞는 카풀이 없습니다</p>
+                    <div style={{ fontSize: '2.5rem', marginBottom: '1rem', opacity: 0.4 }}>🔍</div>
+                    {(searchQuery.from || searchQuery.to || searchQuery.date || selectedTagFilters.size > 0) ? (
+                      <>
+                        <p style={{ fontWeight: 700, marginBottom: '0.4rem' }}>검색 조건에 맞는 카풀이 없어요</p>
+                        <p style={{ fontSize: '0.83rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
+                          다른 조건으로 검색해보거나 조건을 초기화해보세요
+                        </p>
+                        <button
+                          style={{ background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 8, padding: '0.5rem 1.2rem', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}
+                          onClick={() => { setSearchQuery({ from: '', to: '', date: '' }); clearTagFilters() }}
+                        >
+                          조건 초기화
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <p style={{ fontWeight: 700 }}>아직 등록된 카풀이 없어요</p>
+                        <p style={{ fontSize: '0.83rem', color: 'var(--text-muted)', marginTop: '0.3rem' }}>첫 카풀을 등록해보세요!</p>
+                      </>
+                    )}
                   </div>
                 ) : (
                   filteredPosts.map(p => (
@@ -476,18 +499,16 @@ const styles = {
   },
   filterChip: {
     background: 'none',
-    border: '1px solid var(--border)',
+    borderWidth: '1px',
+    borderStyle: 'solid',
+    borderColor: 'var(--border)',
     color: 'var(--text-muted)',
     fontSize: '0.76rem',
     padding: '0.28rem 0.75rem',
     borderRadius: 100,
     cursor: 'pointer',
     transition: 'all 0.2s',
-  },
-  filterChipActive: {
-    borderColor: 'var(--accent)',
-    color: 'var(--accent)',
-    background: 'var(--accent-pale)',
+    outline: 'none',
   },
   viewToggle: {
     display: 'flex',

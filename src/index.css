@@ -125,6 +125,19 @@ button:not([disabled]):active {
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* 카풀 카드 hover — CSS로 처리하여 모달 인터랙션 후 상태 고착 방지 */
+.carpool-card {
+  transition: box-shadow 0.25s, border-color 0.25s, transform 0.2s;
+}
+.carpool-card:hover {
+  border-color: var(--accent) !important;
+  box-shadow: 0 8px 32px rgba(107, 124, 63, 0.18) !important;
+  transform: translateY(-2px) !important;
+}
+.carpool-card:hover .carpool-card-topbar {
+  opacity: 1 !important;
+}
+
 /* 태그 가로 스크롤 (모바일) */
 .tag-scroll {
   overflow-x: auto;

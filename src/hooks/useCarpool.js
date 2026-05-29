@@ -64,7 +64,7 @@ export function useCarpool(memberId) {
 
   const filteredPosts = useMemo(() => {
     const today = new Date().toISOString().split('T')[0]
-    let f = [...posts]
+    let f = posts.filter(p => p.status !== 'CLOSED')
     if (searchQuery.from) f = f.filter(p => p.from.includes(searchQuery.from) || p.to.includes(searchQuery.from))
     if (searchQuery.to)   f = f.filter(p => p.to.includes(searchQuery.to) || p.from.includes(searchQuery.to))
     if (searchQuery.date) f = f.filter(p => p.date === searchQuery.date)
