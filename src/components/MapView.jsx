@@ -134,20 +134,6 @@ export default function MapView({ posts, onOpenDetail }) {
     const { departureLat, departureLng, destinationLat, destinationLng } = selectedPost
     if (departureLat == null || destinationLat == null) return
 
-    // 경로 라인
-    const line = new kakao.maps.Polyline({
-      path: [
-        new kakao.maps.LatLng(departureLat, departureLng),
-        new kakao.maps.LatLng(destinationLat, destinationLng),
-      ],
-      strokeWeight: 4,
-      strokeColor: '#6b7c3f',
-      strokeOpacity: 0.85,
-      strokeStyle: 'dashed',
-    })
-    line.setMap(map)
-    routeLineRef.current = line
-
     // 도착지 마커
     const destEl = makeDestMarkerEl()
     const destOverlay = new kakao.maps.CustomOverlay({
@@ -159,9 +145,50 @@ export default function MapView({ posts, onOpenDetail }) {
     destOverlay.setMap(map)
     destOverlayRef.current = destOverlay
 
-    // 출발지 중심으로 줌인 (경로 전체보다 출발 지점이 더 유용)
-    map.setCenter(new kakao.maps.LatLng(departureLat, departureLng))
-    map.setLevel(5)
+    // 경로 전체가 보이도록 bounds 설정
+    const bounds = new kakao.maps.LatLngBounds()
+    bounds.extend(new kakao.maps.LatLng(departureLat, departureLng))
+    bounds.extend(new kakao.maps.LatLng(destinationLat, destinationLng))
+
+    // OSRM으로 실제 도로 경로 요청 → 실패 시 직선 fallback
+    const url = `https://router.project-osrm.org/route/v1/driving/` +
+      `${departureLng},${departureLat};${destinationLng},${destinationLat}` +
+      `?geometries=geojson&overview=full`
+
+    fetch(url, { signal: AbortSignal.timeout(5000) })
+      .then(r => r.json())
+      .then(data => {
+        const coords = data?.routes?.[0]?.geometry?.coordinates
+        if (!coords?.length) throw new Error('no coords')
+        const path = coords.map(([lng, lat]) => new kakao.maps.LatLng(lat, lng))
+        const line = new kakao.maps.Polyline({
+          path,
+          strokeWeight: 5,
+          strokeColor: '#6b7c3f',
+          strokeOpacity: 0.9,
+          strokeStyle: 'solid',
+        })
+        line.setMap(map)
+        routeLineRef.current = line
+        path.forEach(p => bounds.extend(p))
+        map.setBounds(bounds, 60)
+      })
+      .catch(() => {
+        // OSRM 실패 시 직선 fallback
+        const line = new kakao.maps.Polyline({
+          path: [
+            new kakao.maps.LatLng(departureLat, departureLng),
+            new kakao.maps.LatLng(destinationLat, destinationLng),
+          ],
+          strokeWeight: 4,
+          strokeColor: '#6b7c3f',
+          strokeOpacity: 0.85,
+          strokeStyle: 'dashed',
+        })
+        line.setMap(map)
+        routeLineRef.current = line
+        map.setBounds(bounds, 60)
+      })
   }, [sdkReady, selectedId, selectedPost])
 
   const handleSelectFromSidebar = useCallback((id) => {

@@ -43,17 +43,32 @@ function makeDriverEl() {
   return d
 }
 
-function makePassengerEl(num) {
+function makePassengerEl(nickname) {
   const d = document.createElement('div')
-  d.innerHTML = `<div style="width:34px;height:34px;background:#3498db;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;font-size:13px;" title="탑승자 ${num}">🧍</div>`
+  d.innerHTML = `
+    <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+      <div style="width:34px;height:34px;background:#3498db;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;font-size:13px;">🧍</div>
+      <div style="background:rgba(0,0,0,0.65);color:#fff;font-size:0.6rem;font-weight:700;padding:1px 5px;border-radius:4px;white-space:nowrap;max-width:60px;overflow:hidden;text-overflow:ellipsis;">${nickname}</div>
+    </div>`
   return d
 }
 
-function RideMap({ ride, driverPos, passengerPositions, focusPos, large }) {
+function makeMyPosEl() {
+  const d = document.createElement('div')
+  d.innerHTML = `
+    <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+      <div style="width:36px;height:36px;background:#e74c3c;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;font-size:16px;" title="내 위치">📍</div>
+      <div style="background:rgba(0,0,0,0.65);color:#fff;font-size:0.6rem;font-weight:700;padding:1px 5px;border-radius:4px;white-space:nowrap;">내 위치</div>
+    </div>`
+  return d
+}
+
+function RideMap({ ride, driverPos, passengerPositions, focusPos, large, myPos }) {
   const mapRef = useRef(null)
   const mapInstanceRef = useRef(null)
   const driverOverlayRef = useRef(null)       // 드라이버 마커 (위치만 업데이트)
   const passengerOverlaysRef = useRef([])     // 탑승자 마커들
+  const myPosOverlayRef = useRef(null)        // 내 위치 마커 (승객 전용)
   const [sdkReady, setSdkReady] = useState(false)
   const [error, setError] = useState(null)
 
@@ -123,16 +138,36 @@ function RideMap({ ride, driverPos, passengerPositions, focusPos, large }) {
     passengerOverlaysRef.current = []
 
     if (passengerPositions && passengerPositions.size > 0) {
-      let pNum = 1
-      passengerPositions.forEach(([lat, lng]) => {
+      passengerPositions.forEach(({ pos, nickname }) => {
+        const [lat, lng] = pos
         const ov = new kakao.maps.CustomOverlay({
           position: new kakao.maps.LatLng(lat, lng),
-          content: makePassengerEl(pNum++), yAnchor: 0.5, zIndex: 4, map,
+          content: makePassengerEl(nickname || '승객'), yAnchor: 1.1, zIndex: 4, map,
         })
         passengerOverlaysRef.current.push(ov)
       })
     }
   }, [sdkReady, passengerPositions])
+
+  // 내 위치 마커 (승객 전용) — 지도 중심 이동 없이 마커만 표시
+  useEffect(() => {
+    const map = mapInstanceRef.current
+    if (!map || !sdkReady) return
+    const kakao = window.kakao
+    const pos = myPos ? new kakao.maps.LatLng(myPos[0], myPos[1]) : null
+
+    if (!pos) {
+      if (myPosOverlayRef.current) { myPosOverlayRef.current.setMap(null); myPosOverlayRef.current = null }
+      return
+    }
+    if (myPosOverlayRef.current) {
+      myPosOverlayRef.current.setPosition(pos)
+    } else {
+      myPosOverlayRef.current = new kakao.maps.CustomOverlay({
+        position: pos, content: makeMyPosEl(), yAnchor: 1.1, zIndex: 6, map,
+      })
+    }
+  }, [sdkReady, myPos])
 
   // 탑승자 클릭 시 해당 위치로 지도 이동
   useEffect(() => {
@@ -207,7 +242,7 @@ function PassengerRow({ passenger, onBoard, onDropOff, hasPos, onFocus }) {
     >
       <div style={{ flex: 1 }}>
         <div style={styles.passengerId}>
-          승객 #{passenger.passengerId}
+          {passenger.nickname || `승객 #${passenger.passengerId}`}
           {hasPos && <span style={{ fontSize: '0.65rem', color: '#3498db', marginLeft: 6 }}>📍 위치 확인</span>}
         </div>
         <span style={{ fontSize: '0.75rem', color, fontWeight: 700 }}>{label}</span>
@@ -224,10 +259,11 @@ function PassengerRow({ passenger, onBoard, onDropOff, hasPos, onFocus }) {
   )
 }
 
-function ActiveRidePanel({ ride, isDriver, large }) {
+function ActiveRidePanel({ ride, isDriver, large, memberId }) {
   const [passengers, setPassengers] = useState([])
   const [driverPos, setDriverPos] = useState(null)
-  const [passengerPositions, setPassengerPositions] = useState(new Map()) // passengerId → [lat, lng]
+  const [passengerPositions, setPassengerPositions] = useState(new Map()) // passengerId → { pos: [lat,lng], nickname }
+  const [myPos, setMyPos] = useState(null)   // 내 위치 (승객 전용)
   const [focusPos, setFocusPos] = useState(null)
   const [connected, setConnected] = useState(false)
   const [err, setErr] = useState('')
@@ -235,6 +271,9 @@ function ActiveRidePanel({ ride, isDriver, large }) {
   const geoIntervalRef = useRef(null)
   const remainingMs = useCountdown(ride.departureTime)
   const withinWindow = remainingMs !== null && remainingMs <= 30 * 60 * 1000
+  // 테스트 모드: 브라우저 GPS 전송을 끄고 k6가 보낸 mock 위치만 사용
+  // (콘솔에서 localStorage.setItem('rideTestMode','1') 후 새로고침)
+  const testMode = typeof window !== 'undefined' && localStorage.getItem('rideTestMode') === '1'
 
   useEffect(() => {
     if (isDriver) {
@@ -272,6 +311,7 @@ function ActiveRidePanel({ ride, isDriver, large }) {
         setConnected(true)
         if (isDriver) {
           // 드라이버: 내 위치를 탑승자들에게 전송 (실제 GPS)
+          // 테스트 모드에서는 전송하지 않고 k6가 보낸 위치를 아래 구독으로 수신
           const sendLocation = () => {
             if (!navigator.geolocation || !client.connected) return
             navigator.geolocation.getCurrentPosition(pos => {
@@ -282,8 +322,10 @@ function ActiveRidePanel({ ride, isDriver, large }) {
               })
             })
           }
-          sendLocation()
-          geoIntervalRef.current = setInterval(sendLocation, 5000)
+          if (!testMode) {
+            sendLocation()
+            geoIntervalRef.current = setInterval(sendLocation, 5000)
+          }
 
           // 드라이버: 서버에서 브로드캐스트된 내 위치 수신 → 지도에 표시 (K6 시뮬레이션 포함)
           client.subscribe(`/topic/ride/${ride.id}`, msg => {
@@ -291,12 +333,13 @@ function ActiveRidePanel({ ride, isDriver, large }) {
             setDriverPos([loc.latitude, loc.longitude])
           })
 
-          // 드라이버: 탑승자 위치 구독
+          // 드라이버: 탑승자 위치 구독 (닉네임 포함)
           client.subscribe(`/topic/ride/${ride.id}/passengers`, msg => {
             const loc = JSON.parse(msg.body)
+            const nickname = passengers.find(p => p.passengerId === loc.passengerId)?.nickname || '승객'
             setPassengerPositions(prev => {
               const next = new Map(prev)
-              next.set(loc.passengerId, [loc.latitude, loc.longitude])
+              next.set(loc.passengerId, { pos: [loc.latitude, loc.longitude], nickname })
               return next
             })
           })
@@ -307,19 +350,35 @@ function ActiveRidePanel({ ride, isDriver, large }) {
             setDriverPos([loc.latitude, loc.longitude])
           })
 
-          // 탑승자: 내 위치를 드라이버에게 전송
+          // 탑승자: 내 위치 수신 (k6 등 외부에서 전송된 위치를 서버가 브로드캐스트한 것)
+          client.subscribe(`/topic/ride/${ride.id}/passengers`, msg => {
+            const loc = JSON.parse(msg.body)
+            if (memberId && loc.passengerId === memberId) {
+              setMyPos([loc.latitude, loc.longitude])
+            }
+          })
+
+          // 탑승자: 내 위치를 드라이버에게 전송 + 지도에 표시 (실제 GPS)
+          // 테스트 모드에서는 전송하지 않고 k6가 보낸 내 위치를 위 구독으로 수신
           const sendPassengerLocation = () => {
-            if (!navigator.geolocation || !client.connected) return
-            navigator.geolocation.getCurrentPosition(pos => {
-              const { latitude, longitude } = pos.coords
-              client.publish({
-                destination: `/app/ride/${ride.id}/passenger-location`,
-                body: JSON.stringify({ latitude, longitude }),
-              })
-            })
+            if (!client.connected || !navigator.geolocation) return
+            navigator.geolocation.getCurrentPosition(
+              pos => {
+                const { latitude, longitude } = pos.coords
+                client.publish({
+                  destination: `/app/ride/${ride.id}/passenger-location`,
+                  body: JSON.stringify({ latitude, longitude }),
+                })
+                setMyPos([latitude, longitude])
+              },
+              () => { /* GPS 실패 시 무시 — WebSocket으로 수신한 위치로 대체됨 */ },
+              { enableHighAccuracy: false, timeout: 8000, maximumAge: 10000 }
+            )
           }
-          sendPassengerLocation()
-          geoIntervalRef.current = setInterval(sendPassengerLocation, 5000)
+          if (!testMode) {
+            sendPassengerLocation()
+            geoIntervalRef.current = setInterval(sendPassengerLocation, 5000)
+          }
         }
       },
       onDisconnect: () => { setConnected(false) },
@@ -332,7 +391,7 @@ function ActiveRidePanel({ ride, isDriver, large }) {
       clearInterval(geoIntervalRef.current)
       client.deactivate()
     }
-  }, [ride.id, ride.status, isDriver, withinWindow])
+  }, [ride.id, ride.status, isDriver, withinWindow, testMode])
 
   async function handleBoard(applicationId) {
     try {
@@ -377,7 +436,7 @@ function ActiveRidePanel({ ride, isDriver, large }) {
 
       {err && <div style={styles.errorBox}>{err}</div>}
 
-      <RideMap ride={ride} driverPos={driverPos} passengerPositions={isDriver ? passengerPositions : null} focusPos={focusPos} large={large} />
+      <RideMap ride={ride} driverPos={driverPos} passengerPositions={isDriver ? passengerPositions : null} focusPos={focusPos} large={large} myPos={isDriver ? null : myPos} />
 
       {isDriver && (
         <div style={{ marginTop: '1rem' }}>
@@ -395,7 +454,7 @@ function ActiveRidePanel({ ride, isDriver, large }) {
                   onBoard={handleBoard}
                   onDropOff={handleDropOff}
                   hasPos={passengerPositions.has(p.passengerId)}
-                  onFocus={pid => { const pos = passengerPositions.get(pid); if (pos) setFocusPos([...pos]) }}
+                  onFocus={pid => { const entry = passengerPositions.get(pid); if (entry) setFocusPos([...entry.pos]) }}
                 />
               ))}
             </div>
@@ -499,7 +558,7 @@ function RideCard({ ride, isDriver, onStart, onComplete }) {
   )
 }
 
-export default function RidePage() {
+export default function RidePage({ memberId }) {
   const [driverRides, setDriverRides] = useState([])
   const [passengerRides, setPassengerRides] = useState([])
   const [loadingDriver, setLoadingDriver] = useState(true)
@@ -581,7 +640,7 @@ export default function RidePage() {
             <ActiveRidePanel ride={activeDriverRide} isDriver large />
           )}
           {activePassengerRide && (
-            <ActiveRidePanel ride={activePassengerRide} isDriver={false} large />
+            <ActiveRidePanel ride={activePassengerRide} isDriver={false} large memberId={memberId} />
           )}
           {!hasActive && (
             <div style={{ ...styles.card, textAlign: 'center', padding: '3rem 1rem' }}>
