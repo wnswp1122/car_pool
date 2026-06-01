@@ -1,4 +1,6 @@
-const BASE = '/api/v1'
+// VITE_API_BASE 미설정 시(로컬 dev) 상대경로 → Vite proxy 사용.
+// Vercel 배포 시 VITE_API_BASE=https://<백엔드도메인> 으로 EC2 직접 지정.
+const BASE = `${import.meta.env.VITE_API_BASE ?? ''}/api/v1`
 
 function getToken() {
   return localStorage.getItem('accessToken')

@@ -303,8 +303,11 @@ function ActiveRidePanel({ ride, isDriver, large, memberId }) {
 
     const token = localStorage.getItem('accessToken')
     const wsProto = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+    // VITE_WS_BASE 미설정 시(로컬 dev) 현재 호스트 → Vite proxy 사용.
+    // Vercel 배포 시 VITE_WS_BASE=wss://<백엔드도메인> 으로 EC2 직접 지정.
+    const wsBase = import.meta.env.VITE_WS_BASE || `${wsProto}//${window.location.host}`
     const client = new Client({
-      brokerURL: `${wsProto}//${window.location.host}/ws`,
+      brokerURL: `${wsBase}/ws`,
       connectHeaders: { Authorization: `Bearer ${token}` },
       reconnectDelay: 5000,
       onConnect: () => {
