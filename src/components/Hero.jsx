@@ -1,9 +1,10 @@
 import React from 'react'
+import { CarIcon, UsersIcon, StarIcon } from './Icons'
 
 const STATS = [
-  { num: (n) => n,     suffix: '',   label: '등록된 카풀', icon: '🚗' },
-  { num: () => '2.8k', suffix: '',   label: '누적 매칭',   icon: '🤝' },
-  { num: () => '4.8',  suffix: '★',  label: '평균 평점',   icon: '⭐' },
+  { num: (n) => n,     suffix: '',   label: '등록된 카풀', Icon: CarIcon },
+  { num: () => '2.8k', suffix: '',   label: '누적 매칭',   Icon: UsersIcon },
+  { num: () => '4.8',  suffix: '',   label: '평균 평점',   Icon: StarIcon },
 ]
 
 export default function Hero({ totalPosts }) {
@@ -11,12 +12,11 @@ export default function Hero({ totalPosts }) {
 
   return (
     <div style={styles.hero}>
-      {/* 그라디언트 오버레이 */}
-      <div style={styles.gradientOverlay} />
+      <div style={styles.band} />
 
       <div style={styles.inner}>
         <div style={styles.badge}>
-          <span style={styles.badgeDot}>●</span>
+          <span style={styles.badgeDot} />
           실시간 카풀 매칭
         </div>
         <h1 style={styles.h1}>
@@ -31,7 +31,7 @@ export default function Hero({ totalPosts }) {
         <div style={styles.statsRow}>
           {STATS.map((s, i) => (
             <div key={i} style={styles.statCard}>
-              <span style={styles.statIcon}>{s.icon}</span>
+              <s.Icon size={16} style={{ color: 'var(--accent)', marginBottom: '0.4rem' }} />
               <div style={styles.statNum}>
                 {s.num(values[i])}{s.suffix}
               </div>
@@ -50,85 +50,93 @@ const styles = {
     zIndex: 1,
     overflow: 'hidden',
   },
-  gradientOverlay: {
+  band: {
     position: 'absolute',
-    inset: 0,
-    background: 'linear-gradient(170deg, rgba(107,124,63,0.10) 0%, rgba(247,246,242,0) 65%)',
+    top: 0,
+    left: 0,
+    right: 0,
+    minHeight: '38vh',
+    background: 'var(--band-gradient)',
     pointerEvents: 'none',
+    zIndex: 0,
   },
   inner: {
     position: 'relative',
-    padding: 'clamp(2rem, 5vw, 4rem) 2rem 2rem',
-    textAlign: 'center',
-    maxWidth: 720,
+    zIndex: 1,
+    padding: 'clamp(2.5rem, 6vw, 4.5rem) 2rem 2.5rem',
+    textAlign: 'left',
+    maxWidth: 760,
     margin: '0 auto',
   },
   badge: {
     display: 'inline-flex',
     alignItems: 'center',
-    gap: '0.4rem',
-    background: 'var(--accent-pale)',
-    border: '1px solid rgba(107,124,63,0.3)',
-    color: 'var(--accent)',
-    fontSize: '0.76rem',
-    fontWeight: 600,
-    padding: '0.3rem 0.9rem',
+    gap: '0.45rem',
+    background: 'rgba(255,255,255,0.7)',
+    border: '1px solid var(--border)',
+    color: 'var(--text)',
+    fontFamily: 'var(--font-body)',
+    fontSize: '0.75rem',
+    fontWeight: 500,
+    letterSpacing: '0.08em',
+    textTransform: 'uppercase',
+    padding: '0.32rem 0.85rem',
     borderRadius: 100,
-    marginBottom: '1.2rem',
-    letterSpacing: '0.3px',
+    marginBottom: '1.4rem',
   },
   badgeDot: {
-    fontSize: '0.5rem',
+    width: 6,
+    height: 6,
+    borderRadius: '50%',
+    background: 'var(--accent)',
     animation: 'pulse 2s infinite',
   },
   h1: {
-    fontSize: 'clamp(1.8rem, 5vw, 3.2rem)',
-    fontWeight: 900,
-    lineHeight: 1.15,
-    marginBottom: '0.8rem',
-    letterSpacing: '-1.5px',
+    fontFamily: 'var(--font-display)',
+    fontSize: 'clamp(2rem, 5vw, 3.4rem)',
+    fontWeight: 500,
+    lineHeight: 1.1,
+    marginBottom: '1rem',
+    letterSpacing: '-0.035em',
     color: 'var(--text)',
     wordBreak: 'keep-all',
   },
   p: {
     color: 'var(--text-muted)',
-    fontSize: 'clamp(0.85rem, 2vw, 1rem)',
-    marginBottom: '2rem',
-    lineHeight: 1.7,
+    fontSize: 'clamp(0.9rem, 2vw, 1.0625rem)',
+    marginBottom: '2.2rem',
+    lineHeight: 1.65,
     wordBreak: 'keep-all',
+    maxWidth: 480,
   },
   statsRow: {
     display: 'flex',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     gap: '0.75rem',
     flexWrap: 'wrap',
   },
   statCard: {
     background: 'var(--surface)',
     border: '1px solid var(--border)',
-    borderRadius: 16,
+    borderRadius: 10,
     padding: '0.9rem 1.4rem',
-    textAlign: 'center',
-    boxShadow: '0 2px 12px rgba(107,124,63,0.08)',
-    minWidth: 90,
-    flex: '1 1 90px',
-    maxWidth: 130,
-  },
-  statIcon: {
-    display: 'block',
-    fontSize: '1.2rem',
-    marginBottom: '0.3rem',
+    textAlign: 'left',
+    boxShadow: 'var(--card-glow)',
+    minWidth: 110,
+    flex: '1 1 110px',
+    maxWidth: 150,
   },
   statNum: {
-    fontFamily: "'Space Mono', monospace",
+    fontFamily: 'var(--font-mono)',
+    fontVariantNumeric: 'tabular-nums',
     fontSize: 'clamp(1.1rem, 3vw, 1.4rem)',
-    fontWeight: 700,
-    color: 'var(--accent)',
+    fontWeight: 500,
+    color: 'var(--text)',
     lineHeight: 1,
-    marginBottom: '0.25rem',
+    marginBottom: '0.3rem',
   },
   statLabel: {
-    fontSize: '0.68rem',
+    fontSize: '0.7rem',
     color: 'var(--text-muted)',
     fontWeight: 500,
     wordBreak: 'keep-all',

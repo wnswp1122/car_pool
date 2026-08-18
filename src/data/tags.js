@@ -1,37 +1,37 @@
-// DB 태그 24개에 대한 이모지 + 스타일 매핑
+// DB 태그 24개에 대한 스타일 매핑 — web-precision-fintech 팔레트에 맞춰 저채도로 정리
 export const TAG_STYLE_MAP = {
   // 행동 규칙
-  '금연':          { emoji: '🚭', bg: '#fde8e8', tc: '#b94040' },
-  '비흡연':        { emoji: '🙅', bg: '#fde8e8', tc: '#c04040' },
-  '흡연':          { emoji: '🚬', bg: '#f0ece0', tc: '#6b5a2a' },
+  '금연':          { bg: '#f7ecea', tc: '#94493c' },
+  '비흡연':        { bg: '#f7ecea', tc: '#94493c' },
+  '흡연':          { bg: '#f3efe6', tc: '#7a6a45' },
   // 분위기
-  '조용한 분위기': { emoji: '🤫', bg: '#e8eef8', tc: '#3a5080' },
-  '조용히':        { emoji: '🔇', bg: '#eef0f8', tc: '#4050a0' },
-  '대화환영':      { emoji: '💬', bg: '#e8f8ec', tc: '#2a6040' },
-  '음악':          { emoji: '🎵', bg: '#f4e8f8', tc: '#7040a0' },
+  '조용한 분위기': { bg: '#eef0f7', tc: '#4d5a78' },
+  '조용히':        { bg: '#eef0f7', tc: '#4d5a78' },
+  '대화환영':      { bg: '#eaf3ee', tc: '#3f7a5c' },
+  '음악':          { bg: '#f1eef7', tc: '#6a5590' },
   // 동승자 조건
-  '여성전용':      { emoji: '👩', bg: '#fde8f4', tc: '#904070' },
-  '반려동물':      { emoji: '🐾', bg: '#e8f8ec', tc: '#2a7040' },
-  '짐 있음':       { emoji: '🎒', bg: '#fff4e0', tc: '#8a5c10' },
+  '여성전용':      { bg: '#f6edf1', tc: '#94486e' },
+  '반려동물':      { bg: '#eaf3ee', tc: '#3f7a5c' },
+  '짐 있음':       { bg: '#f6f0e6', tc: '#8a6a2e' },
   // 목적/유형
-  '출퇴근':        { emoji: '🏢', bg: '#e8f0ff', tc: '#2040a0' },
-  '학교':          { emoji: '🎓', bg: '#fff8e0', tc: '#806000' },
-  '장거리':        { emoji: '🛣️', bg: '#f0ffe8', tc: '#2a6020' },
-  '여행':          { emoji: '✈️', bg: '#e8f8ff', tc: '#2060a0' },
+  '출퇴근':        { bg: '#eaeef7', tc: '#3c4f8a' },
+  '학교':          { bg: '#f6f2e6', tc: '#8a7228' },
+  '장거리':        { bg: '#edf2e8', tc: '#54702e' },
+  '여행':          { bg: '#e9f1f6', tc: '#31607e' },
   // 목적지
-  '강남':          { emoji: '🏙️', bg: '#f0f0ff', tc: '#404090' },
-  '판교':          { emoji: '💻', bg: '#e8fff0', tc: '#206040' },
-  '수원':          { emoji: '🏰', bg: '#fff0e8', tc: '#804020' },
-  '인천공항':      { emoji: '🛫', bg: '#e8f4ff', tc: '#2050a0' },
-  '고속터미널':    { emoji: '🚌', bg: '#fff0f8', tc: '#903060' },
-  '신촌':          { emoji: '🎭', bg: '#f8f0ff', tc: '#702090' },
-  '홍대':          { emoji: '🎨', bg: '#fff0f0', tc: '#a02040' },
-  '잠실':          { emoji: '⚾', bg: '#f0fff0', tc: '#207020' },
-  '공항':          { emoji: '🛬', bg: '#e8f8ff', tc: '#1060a0' },
-  '쇼핑':          { emoji: '🛍️', bg: '#fff4f8', tc: '#a03060' },
+  '강남':          { bg: '#eeeef7', tc: '#4d4d8a' },
+  '판교':          { bg: '#e9f2ee', tc: '#2f7350' },
+  '수원':          { bg: '#f5eee6', tc: '#8a5a30' },
+  '인천공항':      { bg: '#e9f0f6', tc: '#33628a' },
+  '고속터미널':    { bg: '#f6eef2', tc: '#8a4468' },
+  '신촌':          { bg: '#f1eef7', tc: '#6a4890' },
+  '홍대':          { bg: '#f7eeee', tc: '#933f4a' },
+  '잠실':          { bg: '#edf2e9', tc: '#3f7a3f' },
+  '공항':          { bg: '#e9f0f6', tc: '#2f5c8a' },
+  '쇼핑':          { bg: '#f6eef1', tc: '#8a3f60' },
 }
 
-export const DEFAULT_TAG_STYLE = { emoji: '🏷️', bg: '#f0f0f0', tc: '#606060' }
+export const DEFAULT_TAG_STYLE = { bg: 'var(--surface2)', tc: 'var(--text-muted)' }
 
 export function getTagStyle(name) {
   return TAG_STYLE_MAP[name] || DEFAULT_TAG_STYLE

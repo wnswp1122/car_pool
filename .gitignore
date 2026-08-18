@@ -32,3 +32,5 @@ PROJECT_OVERVIEW.md
 # OS
 .DS_Store
 Thumbs.db
+.vercel
+.omc/

@@ -1,17 +1,21 @@
 :root {
-  --bg: #f7f6f2;
+  --bg: #f6f5f3;
   --surface: #ffffff;
-  --surface2: #f2f0eb;
-  --border: #e4e0d8;
-  --accent: #6b7c3f;
-  --accent-light: #8a9e50;
-  --accent-pale: #eef1e6;
-  --accent2: #4a5a2a;
-  --accent3: #c0392b;
-  --text: #2a2a1f;
-  --text-muted: #7a7a6a;
-  --text-dim: #b5b5a5;
-  --card-glow: 0 2px 16px rgba(107, 124, 63, 0.08);
+  --surface2: #efeee9;
+  --border: #e4e2dd;
+  --accent: #4f46e5;
+  --accent-light: #6366f1;
+  --accent-pale: #eef0fc;
+  --accent2: #4338ca;
+  --accent3: #b3492f;
+  --text: #1a2233;
+  --text-muted: #5b6472;
+  --text-dim: #9aa1ac;
+  --card-glow: 0 1px 2px rgba(26, 34, 51, 0.05);
+  --band-gradient: linear-gradient(105deg, #fef6e4 0%, #fcd9c6 26%, #e6d6f5 58%, #cdd3f5 82%, #c3c9f0 100%);
+  --font-display: 'Inter Tight', 'Pretendard Variable', 'Pretendard', -apple-system, sans-serif;
+  --font-body: 'Inter', 'Pretendard Variable', 'Pretendard', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
   --bottom-nav-h: 60px;
 }
 
@@ -22,7 +26,7 @@
 }
 
 body {
-  font-family: 'Pretendard Variable', 'Pretendard', 'Noto Sans KR', sans-serif;
+  font-family: var(--font-body);
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
@@ -30,25 +34,20 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image: radial-gradient(circle, rgba(107, 124, 63, 0.10) 1px, transparent 1px);
-  background-size: 28px 28px;
-  pointer-events: none;
-  z-index: 0;
-}
-
 button {
-  font-family: 'Pretendard Variable', 'Pretendard', 'Noto Sans KR', sans-serif;
+  font-family: var(--font-body);
   cursor: pointer;
 }
 
 input,
 select,
 textarea {
-  font-family: 'Pretendard Variable', 'Pretendard', 'Noto Sans KR', sans-serif;
+  font-family: var(--font-body);
+}
+
+.tabular-nums {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
 }
 
 /* 전역 focus 상태 */
@@ -58,7 +57,7 @@ select:focus {
   outline: none;
   border-color: var(--accent) !important;
   background: #fff !important;
-  box-shadow: 0 0 0 3px rgba(107, 124, 63, 0.12) !important;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12) !important;
   transition: box-shadow 0.2s, border-color 0.2s;
 }
 
@@ -70,9 +69,9 @@ button:not([disabled]):active {
 
 /* leaflet popup overrides */
 .leaflet-popup-content-wrapper {
-  border-radius: 14px !important;
+  border-radius: 10px !important;
   border: 1px solid var(--border) !important;
-  box-shadow: 0 8px 32px rgba(107, 124, 63, 0.18) !important;
+  box-shadow: 0 1px 2px rgba(26, 34, 51, 0.05) !important;
   padding: 0 !important;
   overflow: hidden;
 }
@@ -89,11 +88,11 @@ button:not([disabled]):active {
 
 /* 모달 중앙 입장 */
 @keyframes modalEnter {
-  from { opacity: 0; transform: scale(0.95) translateY(10px); }
-  to   { opacity: 1; transform: scale(1)    translateY(0); }
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 .modal-enter {
-  animation: modalEnter 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation: modalEnter 0.2s cubic-bezier(0.22, 0.61, 0.36, 1) both;
 }
 
 /* 바텀 시트 입장 */
@@ -102,7 +101,7 @@ button:not([disabled]):active {
   to   { transform: translateY(0); }
 }
 .sheet-enter {
-  animation: sheetUp 0.3s cubic-bezier(0.32, 0.72, 0, 1) both;
+  animation: sheetUp 0.3s cubic-bezier(0.22, 0.61, 0.36, 1) both;
 }
 
 /* 오버레이 fade */
@@ -121,21 +120,27 @@ button:not([disabled]):active {
 }
 
 @keyframes cardUp {
-  from { opacity: 0; transform: translateY(16px); }
+  from { opacity: 0; transform: translateY(12px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
 /* 카풀 카드 hover — CSS로 처리하여 모달 인터랙션 후 상태 고착 방지 */
 .carpool-card {
-  transition: box-shadow 0.25s, border-color 0.25s, transform 0.2s;
+  transition: box-shadow 0.2s cubic-bezier(0.22, 0.61, 0.36, 1), border-color 0.2s cubic-bezier(0.22, 0.61, 0.36, 1), transform 0.2s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 .carpool-card:hover {
   border-color: var(--accent) !important;
-  box-shadow: 0 8px 32px rgba(107, 124, 63, 0.18) !important;
   transform: translateY(-2px) !important;
 }
 .carpool-card:hover .carpool-card-topbar {
   opacity: 1 !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modal-enter, .sheet-enter, .carpool-card, [style*="transition"] {
+    transition: opacity 0.2s ease !important;
+    animation-duration: 0.01ms !important;
+  }
 }
 
 /* 태그 가로 스크롤 (모바일) */
@@ -146,6 +151,14 @@ button:not([disabled]):active {
   flex-wrap: nowrap !important;
 }
 .tag-scroll::-webkit-scrollbar { display: none; }
+
+@media (max-width: 860px) {
+  .login-split {
+    grid-template-columns: 1fr !important;
+    gap: 2rem !important;
+    padding-top: 3rem !important;
+  }
+}
 
 /* ── 반응형 ── */
 @media (max-width: 760px) {

@@ -6,8 +6,15 @@ import {
 } from '../api/rides'
 import { getMyReviewForRide } from '../api/reviews'
 import ReviewModal from './ReviewModal'
+import { MapPinIcon, ClipboardIcon, StarIcon, AlertCircleIcon, MapIcon, CarIcon } from './Icons'
 
 const KAKAO_JS_KEY = import.meta.env.VITE_KAKAO_JS_KEY
+const ORIGIN_COLOR = '#4f46e5'
+const DEST_COLOR = '#1a2233'
+const DRIVER_COLOR = '#2f7a4f'
+const PASSENGER_COLOR = '#6366f1'
+const MY_POS_COLOR = '#b3492f'
+const SUCCESS_COLOR = '#2f7a4f'
 
 let sdkPromise = null
 function loadKakaoSDK() {
@@ -25,30 +32,33 @@ function loadKakaoSDK() {
 
 function makeDepEl(label) {
   const d = document.createElement('div')
-  d.innerHTML = `<div style="width:38px;height:38px;border-radius:50% 50% 50% 5px;transform:rotate(-45deg);background:#6b7c3f;border:2.5px solid #fff;box-shadow:0 3px 10px rgba(0,0,0,0.25);display:flex;align-items:center;justify-content:center;">
-    <span style="transform:rotate(45deg);font-size:0.55rem;font-weight:900;color:#fff;text-align:center;line-height:1.1;">${label}</span>
+  d.innerHTML = `<div style="width:34px;height:34px;border-radius:50% 50% 50% 4px;transform:rotate(-45deg);background:${ORIGIN_COLOR};border:2px solid #fff;box-shadow:0 1px 4px rgba(26,34,51,0.3);display:flex;align-items:center;justify-content:center;">
+    <span style="transform:rotate(45deg);font-size:0.55rem;font-weight:500;color:#fff;font-family:'Inter',sans-serif;text-align:center;line-height:1.1;">${label}</span>
   </div>`
   return d
 }
 function makeDestEl(label) {
   const d = document.createElement('div')
-  d.innerHTML = `<div style="width:38px;height:38px;border-radius:50% 50% 50% 5px;transform:rotate(-45deg);background:#c0392b;border:2.5px solid #fff;box-shadow:0 3px 10px rgba(0,0,0,0.25);display:flex;align-items:center;justify-content:center;">
-    <span style="transform:rotate(45deg);font-size:0.55rem;font-weight:900;color:#fff;text-align:center;line-height:1.1;">${label}</span>
+  d.innerHTML = `<div style="width:34px;height:34px;border-radius:50% 50% 50% 4px;transform:rotate(-45deg);background:${DEST_COLOR};border:2px solid #fff;box-shadow:0 1px 4px rgba(26,34,51,0.3);display:flex;align-items:center;justify-content:center;">
+    <span style="transform:rotate(45deg);font-size:0.55rem;font-weight:500;color:#fff;font-family:'Inter',sans-serif;text-align:center;line-height:1.1;">${label}</span>
   </div>`
   return d
 }
 function makeDriverEl() {
   const d = document.createElement('div')
-  d.innerHTML = `<div style="width:40px;height:40px;background:#27ae60;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;font-size:18px;">🚗</div>`
+  d.innerHTML = `<div style="width:36px;height:36px;background:${DRIVER_COLOR};border-radius:50%;border:2.5px solid #fff;box-shadow:0 2px 8px rgba(26,34,51,0.35);display:flex;align-items:center;justify-content:center;">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17h14M5 17a2 2 0 1 1-4 0 2 2 0 0 1 4 0Zm14 0a2 2 0 1 0 4 0 2 2 0 0 0-4 0M3 17V11l2-5h14l2 5v6M5 11h14" /></svg>
+  </div>`
   return d
 }
 
 function makePassengerEl(nickname) {
   const d = document.createElement('div')
+  const initial = (nickname || '승')[0]
   d.innerHTML = `
     <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
-      <div style="width:34px;height:34px;background:#3498db;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;font-size:13px;">🧍</div>
-      <div style="background:rgba(0,0,0,0.65);color:#fff;font-size:0.6rem;font-weight:700;padding:1px 5px;border-radius:4px;white-space:nowrap;max-width:60px;overflow:hidden;text-overflow:ellipsis;">${nickname}</div>
+      <div style="width:30px;height:30px;background:${PASSENGER_COLOR};border-radius:50%;border:2.5px solid #fff;box-shadow:0 2px 8px rgba(26,34,51,0.35);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:#fff;font-family:'Inter',sans-serif;">${initial}</div>
+      <div style="background:rgba(26,34,51,0.85);color:#fff;font-size:0.6rem;font-weight:500;padding:1px 5px;border-radius:4px;white-space:nowrap;max-width:60px;overflow:hidden;text-overflow:ellipsis;font-family:'Inter',sans-serif;">${nickname}</div>
     </div>`
   return d
 }
@@ -57,8 +67,10 @@ function makeMyPosEl() {
   const d = document.createElement('div')
   d.innerHTML = `
     <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
-      <div style="width:36px;height:36px;background:#e74c3c;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;font-size:16px;" title="내 위치">📍</div>
-      <div style="background:rgba(0,0,0,0.65);color:#fff;font-size:0.6rem;font-weight:700;padding:1px 5px;border-radius:4px;white-space:nowrap;">내 위치</div>
+      <div style="width:32px;height:32px;background:${MY_POS_COLOR};border-radius:50%;border:2.5px solid #fff;box-shadow:0 2px 8px rgba(26,34,51,0.35);display:flex;align-items:center;justify-content:center;" title="내 위치">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.1 7-11.5A7 7 0 0 0 5 9.5C5 14.9 12 21 12 21Z" /><circle cx="12" cy="9.5" r="2.3" /></svg>
+      </div>
+      <div style="background:rgba(26,34,51,0.85);color:#fff;font-size:0.6rem;font-weight:500;padding:1px 5px;border-radius:4px;white-space:nowrap;font-family:'Inter',sans-serif;">내 위치</div>
     </div>`
   return d
 }
@@ -178,7 +190,7 @@ function RideMap({ ride, driverPos, passengerPositions, focusPos, large, myPos }
   }, [sdkReady, focusPos])
 
   return (
-    <div style={{ height: large ? 480 : 260, borderRadius: 12, overflow: 'hidden', border: '1px solid var(--border)', background: '#f5f5f0', position: 'relative' }}>
+    <div style={{ height: large ? 480 : 260, borderRadius: 10, overflow: 'hidden', border: '1px solid var(--border)', background: 'var(--surface2)', position: 'relative' }}>
       <div ref={mapRef} style={{ height: '100%', width: '100%' }} />
       {!sdkReady && !error && (
         <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
@@ -215,12 +227,13 @@ function PreDepartureInfo({ ride, remainingMs }) {
   if (remainingMs <= 0) return null
   return (
     <div style={styles.countdownBox}>
-      <span style={{ fontSize: '1.1rem' }}>⏱</span>
-      <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text)' }}>
+      <span style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text)' }} className="tabular-nums">
         출발까지 {mins > 60 ? `${Math.floor(mins / 60)}시간 ${mins % 60}분` : `${mins}분`}
       </span>
       {remainingMs <= 30 * 60 * 1000 && (
-        <span style={{ fontSize: '0.72rem', color: '#27ae60', fontWeight: 700 }}>● 위치 공유 중</span>
+        <span style={styles.liveTag}>
+          <span style={styles.liveDot} /> 위치 공유 중
+        </span>
       )}
     </div>
   )
@@ -228,7 +241,7 @@ function PreDepartureInfo({ ride, remainingMs }) {
 
 const PASSENGER_STATUS_MAP = {
   PENDING:    { label: '탑승 대기', color: 'var(--text-muted)' },
-  BOARDED:    { label: '탑승 중',   color: '#27ae60' },
+  BOARDED:    { label: '탑승 중',   color: SUCCESS_COLOR },
   DROPPED_OFF:{ label: '하차 완료', color: 'var(--accent)' },
 }
 
@@ -243,9 +256,13 @@ function PassengerRow({ passenger, onBoard, onDropOff, hasPos, onFocus }) {
       <div style={{ flex: 1 }}>
         <div style={styles.passengerId}>
           {passenger.nickname || `승객 #${passenger.passengerId}`}
-          {hasPos && <span style={{ fontSize: '0.65rem', color: '#3498db', marginLeft: 6 }}>📍 위치 확인</span>}
+          {hasPos && (
+            <span style={styles.locateTag}>
+              <MapPinIcon size={11} /> 위치 확인
+            </span>
+          )}
         </div>
-        <span style={{ fontSize: '0.75rem', color, fontWeight: 700 }}>{label}</span>
+        <span style={{ fontSize: '0.75rem', color, fontWeight: 500 }}>{label}</span>
       </div>
       <div style={{ display: 'flex', gap: '0.4rem' }}>
         {passenger.status === 'PENDING' && (
@@ -415,35 +432,42 @@ function ActiveRidePanel({ ride, isDriver, large, memberId }) {
   }
 
   return (
-    <section style={{ ...styles.card, border: '2px solid #27ae60' }}>
+    <section style={{ ...styles.card, borderColor: SUCCESS_COLOR }}>
       <div style={styles.cardHeader}>
-        <div style={{ ...styles.dot, background: '#27ae60' }} />
+        <div style={{ ...styles.dot, background: SUCCESS_COLOR }} />
         <h2 style={styles.cardTitle}>
           {ride.status === 'SCHEDULED' ? '운행 예정' : '운행 중'} — {isDriver ? '드라이버' : '승객'}
         </h2>
-        <span style={{ ...styles.activeBadge, marginLeft: 'auto' }}>#{ride.id}</span>
+        <span style={{ ...styles.activeBadge, marginLeft: 'auto' }} className="tabular-nums">#{ride.id}</span>
         {isDriver && connected && (
-          <span style={{ fontSize: '0.72rem', color: '#27ae60', fontWeight: 700 }}>● 위치 전송 중</span>
+          <span style={styles.liveTag}>
+            <span style={styles.liveDot} /> 위치 전송 중
+          </span>
         )}
       </div>
 
       {ride.departureLocation && (
         <div style={styles.routeBox}>
           <span style={styles.routeFrom}>{ride.departureLocation}</span>
-          <span style={{ color: 'var(--accent)', fontWeight: 700 }}>→</span>
+          <span style={{ color: 'var(--accent)' }}>→</span>
           <span style={styles.routeTo}>{ride.destinationLocation}</span>
         </div>
       )}
 
       {ride.status === 'SCHEDULED' && <PreDepartureInfo ride={ride} remainingMs={remainingMs} />}
 
-      {err && <div style={styles.errorBox}>{err}</div>}
+      {err && (
+        <div style={styles.errorBox}>
+          <AlertCircleIcon size={14} style={{ flexShrink: 0 }} />
+          {err}
+        </div>
+      )}
 
       <RideMap ride={ride} driverPos={driverPos} passengerPositions={isDriver ? passengerPositions : null} focusPos={focusPos} large={large} myPos={isDriver ? null : myPos} />
 
       {isDriver && (
         <div style={{ marginTop: '1rem' }}>
-          <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
+          <div style={{ fontSize: '0.8125rem', fontWeight: 500, color: 'var(--text-muted)', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
             탑승자 관리
           </div>
           {passengers.length === 0 ? (
@@ -486,7 +510,7 @@ function ReviewSection({ ride }) {
         <div style={styles.reviewDone}>평가 완료</div>
       ) : (
         <button style={styles.reviewBtn} onClick={() => setShowModal(true)}>
-          ★ 드라이버 평가하기
+          <StarIcon size={14} fill="#b8860b" style={{ color: '#b8860b' }} /> 드라이버 평가하기
         </button>
       )}
       {showModal && (
@@ -503,7 +527,7 @@ function ReviewSection({ ride }) {
 function RideStatusBadge({ status }) {
   const map = {
     SCHEDULED:   { label: '예정', bg: 'var(--accent-pale)', color: 'var(--accent)' },
-    IN_PROGRESS: { label: '운행 중', bg: 'rgba(39,174,96,0.1)', color: '#27ae60' },
+    IN_PROGRESS: { label: '운행 중', bg: 'rgba(47,122,79,0.1)', color: SUCCESS_COLOR },
     COMPLETED:   { label: '완료', bg: 'var(--surface2)', color: 'var(--text-muted)' },
   }
   const s = map[status] || { label: status, bg: 'var(--surface2)', color: 'var(--text-muted)' }
@@ -517,32 +541,32 @@ function RideCard({ ride, isDriver, onStart, onComplete }) {
     <div style={styles.rideCard}>
       <div style={styles.rideTop}>
         <RideStatusBadge status={ride.status} />
-        <span style={styles.rideId}>운행 #{ride.id}</span>
+        <span style={styles.rideId}>운행 #<span className="tabular-nums">{ride.id}</span></span>
       </div>
 
       {ride.departureLocation && (
         <div style={{ ...styles.rideMeta, display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.5rem' }}>
-          <span style={{ fontWeight: 600, color: 'var(--text)' }}>{ride.departureLocation}</span>
+          <span style={{ fontWeight: 500, color: 'var(--text)' }}>{ride.departureLocation}</span>
           <span style={{ color: 'var(--accent)' }}>→</span>
-          <span style={{ fontWeight: 600, color: 'var(--text)' }}>{ride.destinationLocation}</span>
+          <span style={{ fontWeight: 500, color: 'var(--text)' }}>{ride.destinationLocation}</span>
         </div>
       )}
 
       {ride.departureTime && (
-        <div style={styles.rideMeta}>
+        <div style={styles.rideMeta} className="tabular-nums">
           출발: {new Date(ride.departureTime).toLocaleString('ko-KR')}
           {ride.status === 'SCHEDULED' && remainingMs !== null && remainingMs > 0 && (
-            <span style={{ marginLeft: '0.5rem', color: remainingMs <= 30 * 60 * 1000 ? '#27ae60' : 'var(--text-muted)', fontSize: '0.75rem' }}>
+            <span style={{ marginLeft: '0.5rem', color: remainingMs <= 30 * 60 * 1000 ? SUCCESS_COLOR : 'var(--text-muted)', fontSize: '0.75rem' }}>
               ({Math.floor(remainingMs / 60000)}분 후)
             </span>
           )}
         </div>
       )}
       {ride.startedAt && (
-        <div style={styles.rideMeta}>시작: {new Date(ride.startedAt).toLocaleString('ko-KR')}</div>
+        <div style={styles.rideMeta} className="tabular-nums">시작: {new Date(ride.startedAt).toLocaleString('ko-KR')}</div>
       )}
       {ride.completedAt && (
-        <div style={styles.rideMeta}>완료: {new Date(ride.completedAt).toLocaleString('ko-KR')}</div>
+        <div style={styles.rideMeta} className="tabular-nums">완료: {new Date(ride.completedAt).toLocaleString('ko-KR')}</div>
       )}
 
       {isDriver && ride.status === 'SCHEDULED' && (
@@ -617,7 +641,12 @@ export default function RidePage({ memberId }) {
 
   return (
     <div style={styles.page}>
-      {error && <div style={styles.errorBox}>{error}</div>}
+      {error && (
+        <div style={styles.errorBox}>
+          <AlertCircleIcon size={14} style={{ flexShrink: 0 }} />
+          {error}
+        </div>
+      )}
 
       {/* 탭 헤더 */}
       <div style={styles.tabBar}>
@@ -625,14 +654,14 @@ export default function RidePage({ memberId }) {
           style={{ ...styles.tabBtn, ...(tab === 'map' ? styles.tabBtnActive : {}) }}
           onClick={() => setTab('map')}
         >
-          📍 실시간 운행
+          <MapPinIcon size={15} /> 실시간 운행
           {hasActive && <span style={styles.tabDot} />}
         </button>
         <button
           style={{ ...styles.tabBtn, ...(tab === 'history' ? styles.tabBtnActive : {}) }}
           onClick={() => setTab('history')}
         >
-          📋 운행 이력
+          <ClipboardIcon size={15} /> 운행 이력
         </button>
       </div>
 
@@ -647,7 +676,7 @@ export default function RidePage({ memberId }) {
           )}
           {!hasActive && (
             <div style={{ ...styles.card, textAlign: 'center', padding: '3rem 1rem' }}>
-              <div style={{ fontSize: '3rem', marginBottom: '0.8rem', opacity: 0.3 }}>🗺️</div>
+              <MapIcon size={32} style={{ color: 'var(--text-dim)', marginBottom: '0.8rem' }} />
               <p style={styles.emptyText}>현재 활성 운행이 없습니다</p>
               <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.4rem' }}>
                 운행이 시작되면 여기에 지도가 표시됩니다
@@ -669,7 +698,7 @@ export default function RidePage({ memberId }) {
               <div style={styles.empty}><p style={styles.emptyText}>불러오는 중...</p></div>
             ) : driverRides.filter(r => r.status === 'COMPLETED').length === 0 ? (
               <div style={styles.empty}>
-                <div style={styles.emptyIcon}>🚗</div>
+                <CarIcon size={26} style={{ color: 'var(--text-dim)', marginBottom: '0.6rem' }} />
                 <p style={styles.emptyText}>완료된 운행이 없습니다</p>
               </div>
             ) : (
@@ -690,7 +719,7 @@ export default function RidePage({ memberId }) {
               <div style={styles.empty}><p style={styles.emptyText}>불러오는 중...</p></div>
             ) : passengerRides.filter(r => r.status === 'COMPLETED').length === 0 ? (
               <div style={styles.empty}>
-                <div style={styles.emptyIcon}>🧳</div>
+                <ClipboardIcon size={26} style={{ color: 'var(--text-dim)', marginBottom: '0.6rem' }} />
                 <p style={styles.emptyText}>탑승 이력이 없습니다</p>
               </div>
             ) : (
@@ -707,30 +736,35 @@ export default function RidePage({ memberId }) {
   )
 }
 
+const EASE = 'cubic-bezier(0.22, 0.61, 0.36, 1)'
+
 const styles = {
   page: { display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: 900 },
-  tabBar: { display: 'flex', gap: '0.5rem', borderBottom: '2px solid var(--border)', paddingBottom: '0' },
+  tabBar: { display: 'flex', gap: '0.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '0' },
   tabBtn: {
-    position: 'relative', background: 'none', border: 'none',
-    padding: '0.65rem 1.2rem', fontSize: '0.9rem', fontWeight: 600,
+    position: 'relative', display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+    background: 'none', border: 'none',
+    padding: '0.65rem 1.1rem', fontFamily: 'var(--font-body)', fontSize: '0.9rem', fontWeight: 500,
     color: 'var(--text-muted)', cursor: 'pointer', borderRadius: '8px 8px 0 0',
-    borderBottom: '2px solid transparent', marginBottom: '-2px',
+    borderBottom: '2px solid transparent', marginBottom: '-1px',
+    transition: `color 200ms ${EASE}, border-color 200ms ${EASE}`,
   },
-  tabBtnActive: { color: 'var(--accent)', borderBottom: '2px solid var(--accent)', background: 'var(--accent-pale)' },
+  tabBtnActive: { color: 'var(--accent)', borderBottom: '2px solid var(--accent)' },
   tabDot: {
-    position: 'absolute', top: 8, right: 8,
-    width: 7, height: 7, borderRadius: '50%', background: '#27ae60',
+    position: 'absolute', top: 8, right: -2,
+    width: 6, height: 6, borderRadius: '50%', background: SUCCESS_COLOR,
   },
-  card: { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: '1.5rem' },
+  card: { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: '1.5rem', boxShadow: 'var(--card-glow)' },
   cardHeader: { display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.2rem' },
-  dot: { width: 7, height: 7, background: 'var(--accent)', borderRadius: '50%', flexShrink: 0 },
-  cardTitle: { fontSize: '1rem', fontWeight: 700, color: 'var(--text)', margin: 0 },
+  dot: { width: 6, height: 6, background: 'var(--accent)', borderRadius: '50%', flexShrink: 0 },
+  cardTitle: { fontFamily: 'var(--font-display)', fontSize: '1.05rem', fontWeight: 500, letterSpacing: '-0.015em', color: 'var(--text)', margin: 0 },
   empty: { textAlign: 'center', padding: '1.5rem 1rem', color: 'var(--text-muted)' },
-  emptyIcon: { fontSize: '2rem', marginBottom: '0.6rem', opacity: 0.4 },
-  emptyText: { fontWeight: 600, fontSize: '0.9rem', margin: 0, color: 'var(--text-muted)' },
+  emptyText: { fontWeight: 500, fontSize: '0.9rem', margin: 0, color: 'var(--text-muted)' },
   errorBox: {
-    color: 'var(--accent3, #c0392b)', fontSize: '0.85rem',
-    background: 'rgba(192,57,43,0.06)', borderRadius: 10, padding: '0.8rem 1rem',
+    display: 'flex', alignItems: 'center', gap: '0.4rem',
+    color: 'var(--accent3)', fontSize: '0.85rem',
+    background: 'rgba(179,73,47,0.07)', border: '1px solid rgba(179,73,47,0.2)',
+    borderRadius: 8, padding: '0.7rem 0.9rem',
   },
   rideList: { display: 'flex', flexDirection: 'column', gap: '0.75rem' },
   rideCard: {
@@ -739,42 +773,55 @@ const styles = {
   },
   rideTop: { display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.5rem' },
   badge: {
-    fontSize: '0.7rem', fontWeight: 700, padding: '0.15rem 0.5rem',
+    fontSize: '0.7rem', fontWeight: 500, padding: '0.15rem 0.5rem',
     borderRadius: 6, flexShrink: 0,
   },
   rideId: { fontSize: '0.78rem', color: 'var(--text-muted)' },
   rideMeta: { fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '0.2rem' },
   actionBtn: {
     marginTop: '0.8rem', background: 'var(--accent)', color: '#fff',
-    border: 'none', borderRadius: 7, padding: '0.4rem 0.9rem',
-    fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer',
+    border: '1px solid var(--accent)', borderRadius: 8, padding: '0.4rem 0.9rem',
+    fontFamily: 'var(--font-body)', fontSize: '0.82rem', fontWeight: 500, cursor: 'pointer',
   },
-  actionBtnDanger: { background: 'rgba(192,57,43,0.1)', color: 'var(--accent3, #c0392b)' },
+  actionBtnDanger: { background: 'var(--surface)', borderColor: 'var(--accent3)', color: 'var(--accent3)' },
   activeBadge: {
-    fontSize: '0.68rem', fontWeight: 700, padding: '0.15rem 0.5rem', borderRadius: 100,
-    background: 'rgba(39,174,96,0.12)', color: '#27ae60',
+    fontFamily: 'var(--font-mono)',
+    fontSize: '0.68rem', fontWeight: 500, padding: '0.15rem 0.5rem', borderRadius: 100,
+    background: 'rgba(47,122,79,0.1)', color: SUCCESS_COLOR,
+  },
+  liveTag: {
+    display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
+    fontSize: '0.72rem', color: SUCCESS_COLOR, fontWeight: 500,
+  },
+  liveDot: {
+    width: 5, height: 5, borderRadius: '50%', background: SUCCESS_COLOR,
+    animation: 'pulse 2s infinite',
+  },
+  locateTag: {
+    display: 'inline-flex', alignItems: 'center', gap: '0.2rem',
+    fontSize: '0.65rem', color: 'var(--accent-light)', marginLeft: 6,
   },
   passengerRow: {
     display: 'flex', alignItems: 'center', gap: '0.6rem',
     background: 'var(--surface)', borderRadius: 8, padding: '0.7rem 0.9rem',
     border: '1px solid var(--border)',
   },
-  passengerId: { fontSize: '0.82rem', fontWeight: 600, color: 'var(--text)', marginBottom: '0.15rem' },
+  passengerId: { fontSize: '0.82rem', fontWeight: 500, color: 'var(--text)', marginBottom: '0.15rem' },
   smallBtn: {
-    background: 'var(--accent)', color: '#fff', border: 'none',
+    background: 'var(--accent)', color: '#fff', border: '1px solid var(--accent)',
     borderRadius: 6, padding: '0.3rem 0.7rem',
-    fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
+    fontFamily: 'var(--font-body)', fontSize: '0.75rem', fontWeight: 500, cursor: 'pointer', whiteSpace: 'nowrap',
   },
-  smallBtnDanger: { background: 'rgba(192,57,43,0.1)', color: 'var(--accent3, #c0392b)' },
+  smallBtnDanger: { background: 'var(--surface)', borderColor: 'var(--accent3)', color: 'var(--accent3)' },
   routeBox: {
     display: 'flex', alignItems: 'center', gap: '0.5rem',
     marginBottom: '0.8rem', fontSize: '0.88rem',
   },
-  routeFrom: { fontWeight: 600, color: 'var(--text)' },
-  routeTo: { fontWeight: 600, color: 'var(--text)' },
+  routeFrom: { fontWeight: 500, color: 'var(--text)' },
+  routeTo: { fontWeight: 500, color: 'var(--text)' },
   countdownBox: {
     display: 'flex', alignItems: 'center', gap: '0.5rem',
-    background: 'var(--surface2)', borderRadius: 8, padding: '0.6rem 0.9rem',
+    background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 8, padding: '0.6rem 0.9rem',
     marginBottom: '0.8rem',
   },
   reviewSection: {
@@ -782,13 +829,15 @@ const styles = {
     borderTop: '1px solid var(--border)',
   },
   reviewBtn: {
-    background: '#f0c040', color: '#333',
-    border: 'none', borderRadius: 7, padding: '0.5rem 1rem',
-    fontSize: '0.84rem', fontWeight: 700, cursor: 'pointer',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem',
+    background: 'var(--surface)', color: 'var(--text)',
+    border: '1px solid var(--border)', borderRadius: 8, padding: '0.5rem 1rem',
+    fontFamily: 'var(--font-body)', fontSize: '0.84rem', fontWeight: 500, cursor: 'pointer',
     width: '100%',
+    transition: `border-color 200ms ${EASE}`,
   },
   reviewDone: {
-    textAlign: 'center', fontSize: '0.82rem', color: '#27ae60',
-    fontWeight: 700, padding: '0.4rem',
+    textAlign: 'center', fontSize: '0.82rem', color: SUCCESS_COLOR,
+    fontWeight: 500, padding: '0.4rem',
   },
 }

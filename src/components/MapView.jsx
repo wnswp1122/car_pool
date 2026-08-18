@@ -1,7 +1,12 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react'
 import { fmtDate, fmtPrice } from './CarpoolCard'
+import { CalendarIcon, ClockIcon, UsersIcon, XIcon, AlertCircleIcon, ChevronLeftIcon, ChevronRightIcon } from './Icons'
 
 const KAKAO_JS_KEY = import.meta.env.VITE_KAKAO_JS_KEY
+const ORIGIN_COLOR = '#4f46e5'
+const ORIGIN_COLOR_SELECTED = '#4338ca'
+const FULL_COLOR = '#b3492f'
+const DEST_COLOR = '#1a2233'
 
 let sdkPromise = null
 function loadSDK() {
@@ -20,22 +25,22 @@ function loadSDK() {
 function makeDepMarkerEl(post, selected) {
   const avail = post.seats - post.filled
   const full = avail <= 0
-  const col = selected ? '#3d5a1a' : (full ? '#c0392b' : (post.color || '#6b7c3f'))
-  const size = selected ? 50 : 42
-  const label = full ? '✕' : avail + '석'
+  const col = selected ? ORIGIN_COLOR_SELECTED : (full ? FULL_COLOR : ORIGIN_COLOR)
+  const size = selected ? 44 : 38
+  const label = full ? '마감' : avail + '석'
   const div = document.createElement('div')
   div.innerHTML = `
     <div style="
       width:${size}px;height:${size}px;
-      border-radius:50% 50% 50% 5px;
+      border-radius:50% 50% 50% 4px;
       transform:rotate(-45deg);
       background:${col};
-      border:${selected ? '3px' : '2.5px'} solid white;
-      box-shadow:${selected ? '0 4px 20px rgba(0,0,0,0.4)' : '0 3px 14px rgba(0,0,0,0.25)'};
+      border:${selected ? '2.5px' : '2px'} solid white;
+      box-shadow:${selected ? '0 2px 8px rgba(26,34,51,0.35)' : '0 1px 4px rgba(26,34,51,0.22)'};
       display:flex;align-items:center;justify-content:center;cursor:pointer;
-      transition:all 0.2s;
+      transition:all 0.2s cubic-bezier(0.22,0.61,0.36,1);
     ">
-      <span style="transform:rotate(45deg);font-size:0.55rem;font-weight:900;color:white;font-family:'Space Mono',monospace;text-align:center;line-height:1.1;">
+      <span style="transform:rotate(45deg);font-size:0.58rem;font-weight:500;color:white;font-family:'IBM Plex Mono',ui-monospace,monospace;text-align:center;line-height:1.1;">
         ${label}
       </span>
     </div>
@@ -48,15 +53,15 @@ function makeDestMarkerEl() {
   div.innerHTML = `
     <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
       <div style="
-        width:36px;height:36px;
-        border-radius:50% 50% 50% 5px;
+        width:32px;height:32px;
+        border-radius:50% 50% 50% 4px;
         transform:rotate(-45deg);
-        background:#e67e22;
-        border:2.5px solid white;
-        box-shadow:0 3px 14px rgba(0,0,0,0.3);
+        background:${DEST_COLOR};
+        border:2px solid white;
+        box-shadow:0 1px 4px rgba(26,34,51,0.25);
         display:flex;align-items:center;justify-content:center;
       ">
-        <span style="transform:rotate(45deg);font-size:0.8rem;">도</span>
+        <span style="transform:rotate(45deg);font-size:0.68rem;color:white;font-family:'Inter',sans-serif;">도</span>
       </div>
     </div>
   `
@@ -163,9 +168,9 @@ export default function MapView({ posts, onOpenDetail }) {
         const path = coords.map(([lng, lat]) => new kakao.maps.LatLng(lat, lng))
         const line = new kakao.maps.Polyline({
           path,
-          strokeWeight: 5,
-          strokeColor: '#6b7c3f',
-          strokeOpacity: 0.9,
+          strokeWeight: 4,
+          strokeColor: ORIGIN_COLOR,
+          strokeOpacity: 0.85,
           strokeStyle: 'solid',
         })
         line.setMap(map)
@@ -180,9 +185,9 @@ export default function MapView({ posts, onOpenDetail }) {
             new kakao.maps.LatLng(departureLat, departureLng),
             new kakao.maps.LatLng(destinationLat, destinationLng),
           ],
-          strokeWeight: 4,
-          strokeColor: '#6b7c3f',
-          strokeOpacity: 0.85,
+          strokeWeight: 3,
+          strokeColor: ORIGIN_COLOR,
+          strokeOpacity: 0.75,
           strokeStyle: 'dashed',
         })
         line.setMap(map)
@@ -199,7 +204,11 @@ export default function MapView({ posts, onOpenDetail }) {
     <div style={styles.container}>
       <div ref={mapRef} style={styles.map}>
         {!sdkReady && !error && <div style={styles.loadingOverlay}>지도 불러오는 중...</div>}
-        {error && <div style={styles.loadingOverlay}>⚠️ {error}</div>}
+        {error && (
+          <div style={styles.loadingOverlay}>
+            <AlertCircleIcon size={15} style={{ color: 'var(--accent3)' }} /> {error}
+          </div>
+        )}
       </div>
 
       {/* 우측 사이드바 */}
@@ -209,11 +218,11 @@ export default function MapView({ posts, onOpenDetail }) {
           onClick={() => setSidebarOpen(o => !o)}
           title={sidebarOpen ? '목록 접기' : '목록 펼치기'}
         >
-          {sidebarOpen ? '▶' : '◀'}<br />
-          <span style={{ fontSize: '0.6rem', letterSpacing: 0 }}>목록</span>
+          {sidebarOpen ? <ChevronRightIcon size={13} /> : <ChevronLeftIcon size={13} />}
+          <span style={{ fontSize: '0.6rem', letterSpacing: 0, marginTop: 2 }}>목록</span>
         </button>
         <div style={{ ...styles.sidebarInner, opacity: sidebarOpen ? 1 : 0, pointerEvents: sidebarOpen ? 'auto' : 'none', transition: 'opacity 0.2s' }}>
-          <div style={styles.sidebarHeader}>카풀 목록 ({posts.length})</div>
+          <div style={styles.sidebarHeader}>카풀 목록 (<span className="tabular-nums">{posts.length}</span>)</div>
           {posts.map(p => {
             const avail = p.seats - p.filled
             const isSel = p.id === selectedId
@@ -234,9 +243,9 @@ export default function MapView({ posts, onOpenDetail }) {
                   </span>
                 </div>
                 <div style={styles.mapMeta}>
-                  <span>📅 {fmtDate(p.date)}</span>
-                  <span>⏰ {p.time}</span>
-                  <span style={styles.mapPrice}>{fmtPrice(p.price)}</span>
+                  <span style={styles.mapMetaItem}><CalendarIcon size={12} style={{ color: 'var(--text-dim)' }} /> {fmtDate(p.date)}</span>
+                  <span style={styles.mapMetaItem}><ClockIcon size={12} style={{ color: 'var(--text-dim)' }} /> {p.time}</span>
+                  <span style={styles.mapPrice} className="tabular-nums">{fmtPrice(p.price)}</span>
                 </div>
               </div>
             )
@@ -250,33 +259,33 @@ export default function MapView({ posts, onOpenDetail }) {
           <div style={styles.infoCardInner}>
             <div style={styles.infoRoute}>
               <div style={styles.infoRoutePoint}>
-                <div style={{ ...styles.routeDot, background: 'var(--accent)' }} />
+                <div style={{ ...styles.routeDot, background: ORIGIN_COLOR }} />
                 <span style={styles.infoRouteText}>{selectedPost.from}</span>
               </div>
               <div style={styles.routeLine} />
               <div style={styles.infoRoutePoint}>
-                <div style={{ ...styles.routeDot, background: '#e67e22' }} />
+                <div style={{ ...styles.routeDot, background: DEST_COLOR }} />
                 <span style={styles.infoRouteText}>{selectedPost.to}</span>
               </div>
             </div>
             <div style={styles.infoDivider} />
             <div style={styles.infoMeta}>
-              <span style={styles.infoMetaItem}>📅 {selectedPost.date}</span>
-              <span style={styles.infoMetaItem}>⏰ {selectedPost.time}</span>
-              <span style={styles.infoMetaItem}>👥 {selectedPost.filled}/{selectedPost.seats}명</span>
-              <span style={{ ...styles.infoMetaItem, fontFamily: "'Space Mono',monospace", fontWeight: 700, color: 'var(--accent)' }}>
+              <span style={styles.infoMetaItem}><CalendarIcon size={13} style={{ color: 'var(--text-dim)' }} /> {selectedPost.date}</span>
+              <span style={styles.infoMetaItem}><ClockIcon size={13} style={{ color: 'var(--text-dim)' }} /> {selectedPost.time}</span>
+              <span style={styles.infoMetaItem}><UsersIcon size={13} style={{ color: 'var(--text-dim)' }} /> <span className="tabular-nums">{selectedPost.filled}/{selectedPost.seats}</span>명</span>
+              <span style={{ ...styles.infoMetaItem, fontFamily: 'var(--font-mono)', fontWeight: 500, color: 'var(--text)' }} className="tabular-nums">
                 {fmtPrice(selectedPost.price)}
               </span>
             </div>
             <div style={styles.infoActions}>
               <div style={styles.infoNickname}>
-                <div style={{ ...styles.infoAvatar, background: `${selectedPost.color}22`, color: selectedPost.color }}>
+                <div style={{ ...styles.infoAvatar, background: `${selectedPost.color}1a`, color: selectedPost.color }}>
                   {(selectedPost.nickname || '?')[0]}
                 </div>
                 <span style={styles.infoNicknameText}>{selectedPost.nickname}</span>
               </div>
               <div style={styles.infoBtns}>
-                <button style={styles.btnClose} onClick={() => setSelectedId(null)}>✕</button>
+                <button style={styles.btnClose} onClick={() => setSelectedId(null)}><XIcon size={14} /></button>
                 <button style={styles.btnDetail} onClick={() => onOpenDetail(selectedPost.id)}>
                   상세보기
                 </button>
@@ -290,11 +299,11 @@ export default function MapView({ posts, onOpenDetail }) {
       {!selectedPost && (
         <div style={styles.legend}>
           <div style={styles.legendItem}>
-            <div style={{ width: 12, height: 12, borderRadius: '50% 50% 50% 3px', transform: 'rotate(-45deg)', background: 'var(--accent)', border: '2px solid white', boxShadow: '0 1px 4px rgba(0,0,0,0.2)' }} />
+            <div style={{ width: 11, height: 11, borderRadius: '50% 50% 50% 3px', transform: 'rotate(-45deg)', background: ORIGIN_COLOR, border: '1.5px solid white', boxShadow: '0 1px 3px rgba(26,34,51,0.2)' }} />
             출발지
           </div>
           <div style={styles.legendItem}>
-            <div style={{ width: 12, height: 12, borderRadius: '50% 50% 50% 3px', transform: 'rotate(-45deg)', background: '#e67e22', border: '2px solid white', boxShadow: '0 1px 4px rgba(0,0,0,0.2)' }} />
+            <div style={{ width: 11, height: 11, borderRadius: '50% 50% 50% 3px', transform: 'rotate(-45deg)', background: DEST_COLOR, border: '1.5px solid white', boxShadow: '0 1px 3px rgba(26,34,51,0.2)' }} />
             도착지
           </div>
         </div>
@@ -303,19 +312,21 @@ export default function MapView({ posts, onOpenDetail }) {
   )
 }
 
+const EASE = 'cubic-bezier(0.22, 0.61, 0.36, 1)'
+
 const styles = {
   container: {
     position: 'relative',
-    borderRadius: 20,
+    borderRadius: 10,
     overflow: 'hidden',
     border: '1px solid var(--border)',
-    boxShadow: '0 4px 24px rgba(107,124,63,0.1)',
+    boxShadow: 'var(--card-glow)',
     marginBottom: '3rem',
   },
   map: {
     height: 660,
     width: '100%',
-    background: '#f5f5f0',
+    background: 'var(--surface2)',
   },
   loadingOverlay: {
     position: 'absolute',
@@ -323,9 +334,10 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: '0.4rem',
     fontSize: '0.9rem',
     color: 'var(--text-muted)',
-    background: '#f5f5f0',
+    background: 'var(--surface2)',
     zIndex: 10,
   },
   sidebar: {
@@ -334,7 +346,7 @@ const styles = {
     right: 12,
     bottom: 12,
     zIndex: 400,
-    transition: 'width 0.25s cubic-bezier(0.4,0,0.2,1)',
+    transition: `width 250ms ${EASE}`,
     overflow: 'visible',
   },
   sidebarToggle: {
@@ -344,61 +356,62 @@ const styles = {
     zIndex: 410,
     background: 'rgba(255,255,255,0.96)',
     border: '1px solid var(--border)',
-    borderRadius: 10,
+    borderRadius: 8,
     width: 28,
     padding: '0.5rem 0.2rem',
     cursor: 'pointer',
     fontSize: '0.65rem',
-    fontWeight: 700,
+    fontWeight: 500,
     color: 'var(--accent)',
-    boxShadow: '0 2px 10px rgba(0,0,0,0.12)',
+    boxShadow: 'var(--card-glow)',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     lineHeight: 1.4,
-    transition: 'right 0.25s cubic-bezier(0.4,0,0.2,1)',
+    transition: `right 250ms ${EASE}`,
   },
   sidebarInner: {
     background: 'rgba(255,255,255,0.96)',
     backdropFilter: 'blur(12px)',
     border: '1px solid var(--border)',
-    borderRadius: 16,
+    borderRadius: 10,
     overflowY: 'auto',
     height: '100%',
-    boxShadow: '0 4px 24px rgba(107,124,63,0.15)',
+    boxShadow: 'var(--card-glow)',
   },
   sidebarHeader: {
     padding: '0.9rem 1.1rem 0.7rem',
     borderBottom: '1px solid var(--border)',
     fontSize: '0.75rem',
-    fontWeight: 700,
+    fontWeight: 500,
     color: 'var(--text-muted)',
     textTransform: 'uppercase',
-    letterSpacing: '0.5px',
+    letterSpacing: '0.08em',
     position: 'sticky',
     top: 0,
     background: 'rgba(255,255,255,0.96)',
     zIndex: 1,
-    borderRadius: '16px 16px 0 0',
+    borderRadius: '10px 10px 0 0',
   },
   mapCard: {
     padding: '0.85rem 1.1rem',
     borderBottom: '1px solid var(--border)',
     cursor: 'pointer',
-    transition: 'background 0.15s',
+    transition: `background 150ms ${EASE}`,
   },
   mapCardSelected: {
     background: 'var(--accent-pale)',
-    borderLeft: '3px solid var(--accent)',
+    borderLeft: '2px solid var(--accent)',
   },
   mapRoute: {
     display: 'flex',
     alignItems: 'center',
     gap: '0.35rem',
-    fontWeight: 700,
-    fontSize: '0.84rem',
+    fontFamily: 'var(--font-display)',
+    fontWeight: 500,
+    fontSize: '0.86rem',
     color: 'var(--text)',
-    marginBottom: '0.35rem',
+    marginBottom: '0.4rem',
   },
   mapMeta: {
     display: 'flex',
@@ -408,19 +421,24 @@ const styles = {
     alignItems: 'center',
     flexWrap: 'wrap',
   },
+  mapMetaItem: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '0.25rem',
+  },
   mapPrice: {
-    fontFamily: "'Space Mono', monospace",
+    fontFamily: 'var(--font-mono)',
     fontSize: '0.78rem',
-    fontWeight: 700,
-    color: 'var(--accent)',
+    fontWeight: 500,
+    color: 'var(--text)',
     marginLeft: 'auto',
   },
   badge: {
     fontSize: '0.65rem',
-    fontWeight: 700,
+    fontWeight: 500,
     padding: '0.18rem 0.48rem',
     borderRadius: 6,
-    fontFamily: "'Space Mono', monospace",
+    fontFamily: 'var(--font-mono)',
     flexShrink: 0,
   },
   badgeSeats: {
@@ -428,7 +446,7 @@ const styles = {
     color: 'var(--accent)',
   },
   badgeFull: {
-    background: 'rgba(192,57,43,0.1)',
+    background: 'rgba(179,73,47,0.08)',
     color: 'var(--accent3)',
   },
 
@@ -439,15 +457,15 @@ const styles = {
     left: 16,
     right: 308,
     zIndex: 450,
-    animation: 'cardUp 0.25s cubic-bezier(0.34,1.2,0.64,1) both',
+    animation: `cardUp 220ms ${EASE} both`,
   },
   infoCardInner: {
-    background: 'rgba(255,255,255,0.97)',
+    background: 'rgba(255,255,255,0.98)',
     backdropFilter: 'blur(16px)',
     border: '1px solid var(--border)',
-    borderRadius: 18,
+    borderRadius: 12,
     padding: '1rem 1.2rem',
-    boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
+    boxShadow: 'var(--card-glow)',
   },
   infoRoute: {
     display: 'flex',
@@ -463,14 +481,15 @@ const styles = {
     minWidth: 0,
   },
   routeDot: {
-    width: 10,
-    height: 10,
+    width: 8,
+    height: 8,
     borderRadius: '50%',
     flexShrink: 0,
   },
   infoRouteText: {
+    fontFamily: 'var(--font-display)',
     fontSize: '0.9rem',
-    fontWeight: 700,
+    fontWeight: 500,
     color: 'var(--text)',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
@@ -478,9 +497,8 @@ const styles = {
   },
   routeLine: {
     flex: '0 0 24px',
-    height: 2,
-    background: 'linear-gradient(to right, var(--accent), #e67e22)',
-    borderRadius: 2,
+    height: 1,
+    background: 'var(--border)',
   },
   infoDivider: {
     height: 1,
@@ -494,6 +512,9 @@ const styles = {
     marginBottom: '0.75rem',
   },
   infoMetaItem: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '0.3rem',
     fontSize: '0.8rem',
     color: 'var(--text-muted)',
   },
@@ -515,7 +536,7 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     fontSize: '0.7rem',
-    fontWeight: 700,
+    fontWeight: 500,
   },
   infoNicknameText: {
     fontSize: '0.83rem',
@@ -528,23 +549,26 @@ const styles = {
     alignItems: 'center',
   },
   btnClose: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
     background: 'var(--surface2)',
     border: '1px solid var(--border)',
     borderRadius: 8,
-    padding: '0.4rem 0.65rem',
+    padding: '0.4rem 0.55rem',
     cursor: 'pointer',
-    fontSize: '0.8rem',
     color: 'var(--text-muted)',
   },
   btnDetail: {
     background: 'var(--accent)',
     color: '#fff',
-    border: 'none',
+    border: '1px solid var(--accent)',
     borderRadius: 8,
     padding: '0.4rem 1rem',
     cursor: 'pointer',
+    fontFamily: 'var(--font-body)',
     fontSize: '0.85rem',
-    fontWeight: 700,
+    fontWeight: 500,
   },
 
   /* 범례 */
@@ -553,10 +577,10 @@ const styles = {
     bottom: 20,
     left: 16,
     zIndex: 400,
-    background: 'rgba(255,255,255,0.93)',
+    background: 'rgba(255,255,255,0.94)',
     backdropFilter: 'blur(8px)',
     border: '1px solid var(--border)',
-    borderRadius: 10,
+    borderRadius: 8,
     padding: '0.6rem 0.9rem',
     fontSize: '0.73rem',
     color: 'var(--text-muted)',

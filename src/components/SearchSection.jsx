@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { getTagStyle } from '../data/tags'
 import { fetchTags } from '../api/tags'
 import { useIsMobile } from '../hooks/useMobile'
+import { SearchIcon, XIcon } from './Icons'
 
 export default function SearchSection({ onSearch, onClear, selectedTagFilters, onToggleTag, onClearTags }) {
   const [from, setFrom] = useState('')
@@ -58,14 +59,15 @@ export default function SearchSection({ onSearch, onClear, selectedTagFilters, o
           <div style={{ ...styles.field, minWidth: isMobile ? 0 : 130, flex: isMobile ? 1 : undefined }}>
             <label style={styles.label}>날짜</label>
             <input
-              style={styles.input}
+              style={{ ...styles.input, ...styles.inputDate }}
               type="date"
               value={date}
               onChange={e => setDate(e.target.value)}
             />
           </div>
           <button style={{ ...styles.searchBtn, flex: isMobile ? 1 : undefined }} onClick={handleSearch}>
-            🔍 검색
+            <SearchIcon size={15} />
+            검색
           </button>
           <button style={styles.resetBtn} onClick={handleClear}>초기화</button>
         </div>
@@ -84,16 +86,20 @@ export default function SearchSection({ onSearch, onClear, selectedTagFilters, o
                 onClick={() => onToggleTag(tag.id)}
                 style={{
                   ...styles.tagBtn,
-                  ...(active ? { background: t.bg, color: t.tc, border: `1.5px solid ${t.tc}`, fontWeight: 700 } : {}),
+                  ...(active
+                    ? { background: 'var(--accent-pale)', color: 'var(--accent)', borderColor: 'var(--accent)' }
+                    : { background: t.bg, color: t.tc, borderColor: 'var(--border)' }),
                 }}
               >
-                {t.emoji} {tag.name}
+                {tag.name}
               </button>
             )
           })}
         </div>
         {selectedTagFilters.size > 0 && (
-          <button style={styles.clearBtn} onClick={onClearTags}>✕</button>
+          <button style={styles.clearBtn} onClick={onClearTags} title="태그 필터 해제">
+            <XIcon size={14} />
+          </button>
         )}
       </div>
     </div>
@@ -104,10 +110,10 @@ const styles = {
   section: {
     background: 'var(--surface)',
     border: '1px solid var(--border)',
-    borderRadius: 16,
+    borderRadius: 10,
     padding: '1rem 1.2rem 0.9rem',
     marginBottom: '0.8rem',
-    boxShadow: '0 2px 12px rgba(107,124,63,0.06)',
+    boxShadow: 'var(--card-glow)',
   },
   searchTop: {
     display: 'flex',
@@ -128,69 +134,78 @@ const styles = {
     flex: 1,
     display: 'flex',
     flexDirection: 'column',
-    gap: '0.28rem',
+    gap: '0.32rem',
     minWidth: 0,
   },
   label: {
-    fontSize: '0.68rem',
+    fontSize: '0.72rem',
     color: 'var(--text-muted)',
-    fontWeight: 700,
-    letterSpacing: '0.4px',
+    fontWeight: 500,
+    letterSpacing: '0.08em',
     textTransform: 'uppercase',
   },
   input: {
-    background: 'var(--surface2)',
-    border: '1.5px solid var(--border)',
-    borderRadius: 10,
-    padding: '0.62rem 0.85rem',
+    background: 'var(--surface)',
+    border: '1px solid var(--border)',
+    borderRadius: 8,
+    padding: '0.62rem 0.8rem',
     color: 'var(--text)',
-    fontSize: '0.88rem',
+    fontSize: '0.875rem',
     outline: 'none',
-    transition: 'border-color 0.2s',
+    transition: 'border-color 0.2s cubic-bezier(0.22,0.61,0.36,1)',
     width: '100%',
     minHeight: 42,
   },
+  inputDate: {
+    fontFamily: 'var(--font-mono)',
+    fontVariantNumeric: 'tabular-nums',
+    fontSize: '0.82rem',
+  },
   searchBtn: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '0.4rem',
     background: 'var(--accent)',
     color: '#fff',
-    border: 'none',
+    border: '1px solid var(--accent)',
     cursor: 'pointer',
-    fontWeight: 700,
-    fontSize: '0.88rem',
-    padding: '0 1.2rem',
-    borderRadius: 10,
+    fontWeight: 500,
+    fontSize: '0.875rem',
+    padding: '0 1.1rem',
+    borderRadius: 8,
     whiteSpace: 'nowrap',
     alignSelf: 'flex-end',
     height: 42,
-    transition: 'filter 0.15s',
+    transition: 'background 0.2s cubic-bezier(0.22,0.61,0.36,1)',
   },
   resetBtn: {
-    background: 'var(--surface2)',
+    background: 'var(--surface)',
     color: 'var(--text-muted)',
-    border: '1.5px solid var(--border)',
+    border: '1px solid var(--border)',
     cursor: 'pointer',
-    fontWeight: 600,
+    fontWeight: 500,
     fontSize: '0.85rem',
     padding: '0 0.9rem',
-    borderRadius: 10,
+    borderRadius: 8,
     whiteSpace: 'nowrap',
     alignSelf: 'flex-end',
     height: 42,
-    transition: 'filter 0.15s',
+    transition: 'border-color 0.2s cubic-bezier(0.22,0.61,0.36,1)',
   },
   tagStripWrapper: {
     borderTop: '1px solid var(--border)',
     paddingTop: '0.75rem',
     display: 'flex',
     alignItems: 'center',
-    gap: '0.5rem',
+    gap: '0.6rem',
   },
   tagLabel: {
-    fontSize: '0.65rem',
-    fontWeight: 700,
+    fontSize: '0.72rem',
+    fontWeight: 500,
     color: 'var(--text-dim)',
     textTransform: 'uppercase',
-    letterSpacing: '0.5px',
+    letterSpacing: '0.08em',
     whiteSpace: 'nowrap',
     flexShrink: 0,
   },
@@ -205,26 +220,26 @@ const styles = {
     display: 'inline-flex',
     alignItems: 'center',
     gap: '0.25rem',
-    border: '1.5px solid var(--border)',
-    background: 'none',
-    color: 'var(--text-muted)',
+    border: '1px solid var(--border)',
     fontSize: '0.76rem',
     fontWeight: 500,
-    padding: '0.28rem 0.65rem',
+    padding: '0.3rem 0.7rem',
     borderRadius: 100,
     cursor: 'pointer',
     whiteSpace: 'nowrap',
-    transition: 'all 0.15s',
+    transition: 'background 0.2s cubic-bezier(0.22,0.61,0.36,1), border-color 0.2s cubic-bezier(0.22,0.61,0.36,1), color 0.2s cubic-bezier(0.22,0.61,0.36,1)',
     flexShrink: 0,
   },
   clearBtn: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
     background: 'none',
-    border: 'none',
+    border: '1px solid var(--border)',
     cursor: 'pointer',
-    fontSize: '0.78rem',
     color: 'var(--text-dim)',
-    padding: '0.2rem 0.3rem',
-    borderRadius: 6,
+    padding: '0.28rem',
+    borderRadius: 8,
     flexShrink: 0,
   },
 }
