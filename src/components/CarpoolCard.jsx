@@ -1,5 +1,6 @@
 import React from 'react'
 import { getTagStyle } from '../data/tags'
+import { CalendarIcon, ClockIcon, UsersIcon, StarIcon } from './Icons'
 
 const DAYS = ['일', '월', '화', '수', '목', '금', '토']
 function fmtDate(d) {
@@ -22,15 +23,15 @@ function TagPill({ tag, size = 'normal' }) {
       alignItems: 'center',
       gap: '0.25rem',
       fontSize: fs,
-      fontWeight: 600,
+      fontWeight: 500,
       padding: pad,
       borderRadius: 100,
       whiteSpace: 'nowrap',
       background: t.bg,
       color: t.tc,
-      border: `1.5px solid ${t.tc}22`,
+      border: `1px solid ${t.tc}33`,
     }}>
-      {t.emoji} {tag?.name}
+      {tag?.name}
     </span>
   )
 }
@@ -47,7 +48,7 @@ export default function CarpoolCard({ post, onOpen, onDelete, onClose, showDelet
       className="carpool-card"
       style={{
         ...styles.card,
-        ...(isClosed ? { opacity: 0.8 } : {}),
+        ...(isClosed ? { opacity: 0.75 } : {}),
       }}
       onClick={() => onOpen(post.id)}
     >
@@ -81,9 +82,9 @@ export default function CarpoolCard({ post, onOpen, onDelete, onClose, showDelet
         </div>
       </div>
       <div style={styles.meta}>
-        <span style={styles.metaItem}>📅 {fmtDate(post.date)}</span>
-        <span style={styles.metaItem}>⏰ {post.time}</span>
-        <span style={styles.metaItem}>👥 {post.filled}/{post.seats}명</span>
+        <span style={styles.metaItem}><CalendarIcon size={13} style={{ color: 'var(--text-dim)' }} /> {fmtDate(post.date)}</span>
+        <span style={styles.metaItem}><ClockIcon size={13} style={{ color: 'var(--text-dim)' }} /> {post.time}</span>
+        <span style={styles.metaItem}><UsersIcon size={13} style={{ color: 'var(--text-dim)' }} /> <span className="tabular-nums">{post.filled}/{post.seats}</span>명</span>
       </div>
       {post.tags?.length > 0 && (
         <div style={styles.tags}>
@@ -93,16 +94,19 @@ export default function CarpoolCard({ post, onOpen, onDelete, onClose, showDelet
       {post.desc && <div style={styles.desc}>{post.desc}</div>}
       <div style={styles.footer}>
         <div style={styles.userInfo}>
-          <div style={{ ...styles.avatar, background: `${post.color}22`, color: post.color }}>
+          <div style={{ ...styles.avatar, background: `${post.color}1a`, color: post.color }}>
             {(post.nickname || '?')[0]}
           </div>
           <div>
             <div style={styles.userName}>{post.nickname || '익명'}</div>
-            <div style={styles.rating}>★ {post.rating} · {post.trips}회</div>
+            <div style={styles.rating}>
+              <StarIcon size={11} style={{ color: '#b8860b' }} />
+              <span className="tabular-nums">{post.rating}</span> · <span className="tabular-nums">{post.trips}</span>회
+            </div>
           </div>
         </div>
         <div style={styles.price}>
-          {fmtPrice(post.price)}
+          <span className="tabular-nums">{fmtPrice(post.price)}</span>
           {!!post.price && <span style={styles.priceSub}>/인</span>}
         </div>
       </div>
@@ -114,7 +118,7 @@ const styles = {
   card: {
     background: 'var(--surface)',
     border: '1px solid var(--border)',
-    borderRadius: 16,
+    borderRadius: 10,
     padding: '1.3rem',
     cursor: 'pointer',
     boxShadow: 'var(--card-glow)',
@@ -127,9 +131,10 @@ const styles = {
     top: 0,
     left: 0,
     right: 0,
-    height: 3,
+    height: 2,
     background: 'var(--accent)',
-    transition: 'opacity 0.25s',
+    transition: 'opacity 0.2s',
+    opacity: 0,
   },
   cardHeader: {
     display: 'flex',
@@ -141,16 +146,18 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     gap: '0.5rem',
-    fontWeight: 700,
-    fontSize: '0.98rem',
+    fontFamily: 'var(--font-display)',
+    fontWeight: 500,
+    fontSize: '1rem',
+    letterSpacing: '-0.01em',
     color: 'var(--text)',
   },
   badge: {
     fontSize: '0.68rem',
-    fontWeight: 700,
+    fontWeight: 500,
     padding: '0.22rem 0.55rem',
     borderRadius: 6,
-    fontFamily: "'Space Mono', monospace",
+    fontFamily: 'var(--font-mono)',
     whiteSpace: 'nowrap',
   },
   badgeSeats: {
@@ -158,7 +165,7 @@ const styles = {
     color: 'var(--accent)',
   },
   badgeFull: {
-    background: 'rgba(192,57,43,0.1)',
+    background: 'rgba(179,73,47,0.08)',
     color: 'var(--accent3)',
   },
   badgeClosed: {
@@ -214,7 +221,7 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     fontSize: '0.72rem',
-    fontWeight: 700,
+    fontWeight: 500,
     flexShrink: 0,
   },
   userName: {
@@ -223,22 +230,25 @@ const styles = {
     color: 'var(--text)',
   },
   rating: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.2rem',
     fontSize: '0.7rem',
-    color: '#b8860b',
+    color: 'var(--text-muted)',
   },
   price: {
-    fontFamily: "'Space Mono', monospace",
-    fontSize: '0.95rem',
-    fontWeight: 700,
-    color: 'var(--accent)',
+    fontFamily: 'var(--font-mono)',
+    fontSize: '0.9rem',
+    fontWeight: 500,
+    color: 'var(--text)',
   },
   priceSub: {
     fontSize: '0.68rem',
     color: 'var(--text-muted)',
-    fontFamily: "'Noto Sans KR', sans-serif",
+    fontFamily: 'var(--font-body)',
   },
   deleteBtn: {
-    background: 'rgba(192,57,43,0.1)',
+    background: 'rgba(179,73,47,0.08)',
     color: 'var(--accent3)',
     border: 'none',
     borderRadius: 6,
@@ -256,6 +266,6 @@ const styles = {
     cursor: 'pointer',
     fontSize: '0.75rem',
     whiteSpace: 'nowrap',
-    fontWeight: 700,
+    fontWeight: 500,
   },
 }

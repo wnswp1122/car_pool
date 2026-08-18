@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react'
 import { getMyProfile, updateProfile, withdrawMember } from '../api/members'
 import { getMyDriver, registerDriver, updateDriver } from '../api/drivers'
 import { getCarColors } from '../api/vehicles'
+import { StarIcon } from './Icons'
+
+const SUCCESS_COLOR = '#2f7a4f'
 
 export default function ProfilePage({ onLogout }) {
   const [profile, setProfile] = useState(null)
@@ -159,7 +162,7 @@ export default function ProfilePage({ onLogout }) {
             <div style={styles.profileName}>{profile.nickname}</div>
             <div style={styles.profileMeta}>{profile.email}</div>
             <div style={styles.profileMeta}>
-              가입일: {profile.createdAt ? new Date(profile.createdAt).toLocaleDateString('ko-KR') : '-'}
+              가입일: <span className="tabular-nums">{profile.createdAt ? new Date(profile.createdAt).toLocaleDateString('ko-KR') : '-'}</span>
             </div>
           </div>
         </div>
@@ -184,7 +187,7 @@ export default function ProfilePage({ onLogout }) {
           </button>
         </form>
         {nicknameMsg && (
-          <div style={{ ...styles.msg, color: nicknameMsg.ok ? 'var(--accent2, #27ae60)' : 'var(--accent3, #c0392b)' }}>
+          <div style={{ ...styles.msg, color: nicknameMsg.ok ? SUCCESS_COLOR : 'var(--accent3)' }}>
             {nicknameMsg.text}
           </div>
         )}
@@ -223,7 +226,7 @@ export default function ProfilePage({ onLogout }) {
           </button>
         </form>
         {pwMsg && (
-          <div style={{ ...styles.msg, color: pwMsg.ok ? 'var(--accent2, #27ae60)' : 'var(--accent3, #c0392b)' }}>
+          <div style={{ ...styles.msg, color: pwMsg.ok ? SUCCESS_COLOR : 'var(--accent3)' }}>
             {pwMsg.text}
           </div>
         )}
@@ -234,7 +237,7 @@ export default function ProfilePage({ onLogout }) {
         <div style={styles.cardHeader}>
           <div style={styles.dot} />
           <h2 style={styles.cardTitle}>드라이버 등록</h2>
-          {driver && <span style={{ ...styles.badge, background: 'rgba(39,174,96,0.1)', color: '#27ae60' }}>등록됨</span>}
+          {driver && <span style={{ ...styles.badge, background: 'rgba(47,122,79,0.1)', color: SUCCESS_COLOR }}>등록됨</span>}
         </div>
         {driverLoading ? (
           <div style={styles.infoBox}>불러오는 중...</div>
@@ -242,8 +245,10 @@ export default function ProfilePage({ onLogout }) {
           <>
             {driver && (
               <div style={{ ...styles.infoBox, marginBottom: '1rem' }}>
-                현재 차량: <strong>{driver.carModel}</strong> / {driver.carColorLabel} / <strong>{driver.carNumber}</strong>
-                {driver.averageRating > 0 && <> / 평점 ⭐ {driver.averageRating.toFixed(1)}</>}
+                현재 차량: <strong>{driver.carModel}</strong> / {driver.carColorLabel} / <strong className="tabular-nums">{driver.carNumber}</strong>
+                {driver.averageRating > 0 && (
+                  <> / <StarIcon size={12} fill="#b8860b" style={{ color: '#b8860b', verticalAlign: -2 }} /> <span className="tabular-nums">{driver.averageRating.toFixed(1)}</span></>
+                )}
               </div>
             )}
             <form onSubmit={handleDriverSubmit} style={styles.form}>
@@ -276,7 +281,7 @@ export default function ProfilePage({ onLogout }) {
               </button>
             </form>
             {driverMsg && (
-              <div style={{ ...styles.msg, color: driverMsg.ok ? '#27ae60' : 'var(--accent3, #c0392b)' }}>
+              <div style={{ ...styles.msg, color: driverMsg.ok ? SUCCESS_COLOR : 'var(--accent3)' }}>
                 {driverMsg.text}
               </div>
             )}
@@ -289,25 +294,27 @@ export default function ProfilePage({ onLogout }) {
         <div style={styles.cardHeader}>
           <div style={styles.dot} />
           <h2 style={styles.cardTitle}>회원 탈퇴</h2>
-          <span style={{ ...styles.badge, background: 'rgba(192,57,43,0.08)', color: 'var(--accent3, #c0392b)' }}>주의</span>
+          <span style={{ ...styles.badge, background: 'rgba(179,73,47,0.08)', color: 'var(--accent3)' }}>주의</span>
         </div>
         <div style={styles.infoBox}>
           탈퇴 시 모든 게시글, 댓글, 신청 내역이 삭제되며 되돌릴 수 없습니다.
         </div>
         <button
-          style={{ ...styles.submitBtn, background: 'rgba(192,57,43,0.1)', color: 'var(--accent3, #c0392b)', marginTop: '1rem' }}
+          style={{ ...styles.submitBtn, background: 'var(--surface)', border: '1px solid var(--accent3)', color: 'var(--accent3)', marginTop: '1rem' }}
           onClick={handleWithdraw}
           disabled={withdrawLoading}
         >
           {withdrawLoading ? '처리 중...' : '회원 탈퇴'}
         </button>
         {withdrawMsg && (
-          <div style={{ ...styles.msg, color: 'var(--accent3, #c0392b)' }}>{withdrawMsg.text}</div>
+          <div style={{ ...styles.msg, color: 'var(--accent3)' }}>{withdrawMsg.text}</div>
         )}
       </section>
     </div>
   )
 }
+
+const EASE = 'cubic-bezier(0.22, 0.61, 0.36, 1)'
 
 const styles = {
   page: {
@@ -319,8 +326,9 @@ const styles = {
   card: {
     background: 'var(--surface)',
     border: '1px solid var(--border)',
-    borderRadius: 16,
+    borderRadius: 10,
     padding: '1.5rem',
+    boxShadow: 'var(--card-glow)',
   },
   cardHeader: {
     display: 'flex',
@@ -329,25 +337,25 @@ const styles = {
     marginBottom: '1.2rem',
   },
   dot: {
-    width: 7,
-    height: 7,
+    width: 6,
+    height: 6,
     background: 'var(--accent)',
     borderRadius: '50%',
     flexShrink: 0,
   },
   cardTitle: {
-    fontSize: '1rem',
-    fontWeight: 700,
+    fontFamily: 'var(--font-display)',
+    fontSize: '1.05rem',
+    fontWeight: 500,
+    letterSpacing: '-0.015em',
     color: 'var(--text)',
     margin: 0,
   },
   badge: {
     fontSize: '0.68rem',
-    fontWeight: 600,
+    fontWeight: 500,
     padding: '0.15rem 0.5rem',
     borderRadius: 100,
-    background: 'rgba(192,57,43,0.08)',
-    color: 'var(--accent3, #c0392b)',
     marginLeft: 'auto',
   },
   profileRow: {
@@ -365,11 +373,12 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     fontSize: '1.4rem',
-    fontWeight: 700,
+    fontWeight: 500,
     flexShrink: 0,
   },
   profileName: {
-    fontWeight: 700,
+    fontFamily: 'var(--font-display)',
+    fontWeight: 500,
     fontSize: '1.05rem',
     color: 'var(--text)',
     marginBottom: '0.3rem',
@@ -385,7 +394,7 @@ const styles = {
     gap: '0.7rem',
   },
   input: {
-    background: 'var(--surface2)',
+    background: 'var(--surface)',
     border: '1px solid var(--border)',
     borderRadius: 8,
     padding: '0.65rem 0.9rem',
@@ -394,27 +403,30 @@ const styles = {
     outline: 'none',
     width: '100%',
     boxSizing: 'border-box',
+    transition: `border-color 200ms ${EASE}`,
   },
   submitBtn: {
     background: 'var(--accent)',
     color: '#fff',
-    border: 'none',
+    border: '1px solid var(--accent)',
     cursor: 'pointer',
-    fontWeight: 700,
-    fontSize: '0.95rem',
-    padding: '0.8rem',
-    borderRadius: 10,
-    transition: 'all 0.2s',
+    fontFamily: 'var(--font-body)',
+    fontWeight: 500,
+    fontSize: '0.9375rem',
+    padding: '0.75rem',
+    borderRadius: 8,
+    transition: `background 200ms ${EASE}`,
   },
   msg: {
     marginTop: '0.5rem',
     fontSize: '0.83rem',
-    fontWeight: 600,
+    fontWeight: 500,
   },
   infoBox: {
     fontSize: '0.78rem',
     color: 'var(--text-muted)',
     background: 'var(--surface2)',
+    border: '1px solid var(--border)',
     borderRadius: 8,
     padding: '0.65rem 0.9rem',
     lineHeight: 1.6,
@@ -427,6 +439,6 @@ const styles = {
   errorBox: {
     padding: '3rem',
     textAlign: 'center',
-    color: 'var(--accent3, #c0392b)',
+    color: 'var(--accent3)',
   },
 }

@@ -3,6 +3,7 @@ import { getTagStyle } from '../data/tags'
 import { fetchTags } from '../api/tags'
 import { useIsMobile } from '../hooks/useMobile'
 import { searchPlace } from '../api/kakao'
+import { XIcon, AlertCircleIcon } from './Icons'
 
 export default function PostModal({ onClose, onSubmit }) {
   const isMobile = useIsMobile()
@@ -57,16 +58,17 @@ export default function PostModal({ onClose, onSubmit }) {
     : styles.overlay
 
   const modalStyle = isMobile
-    ? { ...styles.modal, borderRadius: '20px 20px 0 0', maxWidth: '100%', animation: 'sheetUp 0.3s cubic-bezier(0.32,0.72,0,1) both' }
-    : { ...styles.modal, animation: 'modalEnter 0.22s cubic-bezier(0.34,1.56,0.64,1) both' }
+    ? { ...styles.modal, borderRadius: '14px 14px 0 0', maxWidth: '100%' }
+    : styles.modal
+  const modalClass = isMobile ? 'sheet-enter' : 'modal-enter'
 
   return (
     <div className="overlay-fade" style={overlayStyle} onClick={handleOverlayClick}>
-      <div style={modalStyle}>
+      <div className={modalClass} style={modalStyle}>
         {isMobile && <div style={styles.dragHandle} />}
         <div style={styles.header}>
           <div style={styles.title}>카풀 게시글 등록</div>
-          <button style={styles.closeBtn} onClick={onClose}>✕</button>
+          <button style={styles.closeBtn} onClick={onClose}><XIcon size={16} /></button>
         </div>
 
         <div style={styles.formRow}>
@@ -90,10 +92,10 @@ export default function PostModal({ onClose, onSubmit }) {
 
         <div style={styles.formRow}>
           <FormGroup label="출발 날짜 *">
-            <input style={styles.input} type="date" value={form.date} onChange={e => set('date', e.target.value)} />
+            <input style={{ ...styles.input, fontFamily: 'var(--font-mono)' }} type="date" value={form.date} onChange={e => set('date', e.target.value)} />
           </FormGroup>
           <FormGroup label="출발 시간 *">
-            <input style={styles.input} type="time" value={form.time} onChange={e => set('time', e.target.value)} />
+            <input style={{ ...styles.input, fontFamily: 'var(--font-mono)' }} type="time" value={form.time} onChange={e => set('time', e.target.value)} />
           </FormGroup>
         </div>
 
@@ -107,7 +109,7 @@ export default function PostModal({ onClose, onSubmit }) {
             </select>
           </FormGroup>
           <FormGroup label="1인 분담금 (원)">
-            <input style={styles.input} type="number" value={form.price} onChange={e => set('price', e.target.value)} placeholder="예: 5000" />
+            <input style={{ ...styles.input, fontFamily: 'var(--font-mono)' }} type="number" value={form.price} onChange={e => set('price', e.target.value)} placeholder="예: 5000" />
           </FormGroup>
         </div>
 
@@ -136,17 +138,22 @@ export default function PostModal({ onClose, onSubmit }) {
                     ...styles.tagPickBtn,
                     ...(sel
                       ? { background: t.bg, color: t.tc, borderColor: t.tc }
-                      : { color: t.tc, borderColor: t.bg, background: `${t.bg}44` }),
+                      : { color: t.tc, borderColor: 'var(--border)', background: 'var(--surface)' }),
                   }}
                 >
-                  {t.emoji} {tag.name}
+                  {tag.name}
                 </button>
               )
             })}
           </div>
         </div>
 
-        {error && <div style={styles.error}>{error}</div>}
+        {error && (
+          <div style={styles.error}>
+            <AlertCircleIcon size={14} style={{ flexShrink: 0 }} />
+            {error}
+          </div>
+        )}
 
         <button style={styles.submitBtn} onClick={handleSubmit}>
           게시글 등록하기
@@ -218,6 +225,8 @@ function HoverItem({ children, onMouseDown }) {
   )
 }
 
+const EASE = 'cubic-bezier(0.22, 0.61, 0.36, 1)'
+
 const locStyles = {
   dropdown: {
     position: 'absolute',
@@ -227,7 +236,7 @@ const locStyles = {
     background: 'var(--surface)',
     border: '1px solid var(--border)',
     borderRadius: 10,
-    boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+    boxShadow: 'var(--card-glow)',
     zIndex: 700,
     listStyle: 'none',
     margin: 0,
@@ -239,11 +248,11 @@ const locStyles = {
     padding: '0.55rem 0.9rem',
     cursor: 'pointer',
     borderBottom: '1px solid var(--border)',
-    transition: 'background 0.15s',
+    transition: `background 150ms ${EASE}`,
   },
   placeName: {
     fontSize: '0.88rem',
-    fontWeight: 600,
+    fontWeight: 500,
     color: 'var(--text)',
     marginBottom: '0.15rem',
   },
@@ -258,11 +267,11 @@ function FormGroup({ label, children }) {
     <div style={{ marginBottom: '1rem', flex: 1 }}>
       <label style={{
         display: 'block',
-        fontSize: '0.75rem',
-        fontWeight: 600,
+        fontSize: '0.8125rem',
+        fontWeight: 500,
         color: 'var(--text-muted)',
         textTransform: 'uppercase',
-        letterSpacing: '0.5px',
+        letterSpacing: '0.06em',
         marginBottom: '0.45rem',
       }}>
         {label}
@@ -277,8 +286,8 @@ const styles = {
     position: 'fixed',
     inset: 0,
     zIndex: 600,
-    background: 'rgba(42,42,31,0.5)',
-    backdropFilter: 'blur(8px)',
+    background: 'rgba(26,34,51,0.4)',
+    backdropFilter: 'blur(4px)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -287,13 +296,13 @@ const styles = {
   modal: {
     background: 'var(--surface)',
     border: '1px solid var(--border)',
-    borderRadius: 20,
+    borderRadius: 12,
     width: '100%',
     maxWidth: 540,
     maxHeight: '92vh',
     overflowY: 'auto',
     padding: '1.5rem 1.5rem 2rem',
-    boxShadow: '0 20px 60px rgba(42,42,31,0.15)',
+    boxShadow: 'var(--card-glow)',
   },
   dragHandle: {
     width: 36,
@@ -309,17 +318,23 @@ const styles = {
     marginBottom: '1.5rem',
   },
   title: {
-    fontSize: '1.2rem',
-    fontWeight: 700,
+    fontFamily: 'var(--font-display)',
+    fontSize: '1.25rem',
+    fontWeight: 500,
+    letterSpacing: '-0.02em',
+    color: 'var(--text)',
   },
   closeBtn: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
     background: 'none',
-    border: 'none',
+    border: '1px solid var(--border)',
     color: 'var(--text-muted)',
     cursor: 'pointer',
-    fontSize: '1.3rem',
-    padding: '0.3rem',
-    borderRadius: 6,
+    padding: '0.4rem',
+    borderRadius: 8,
+    transition: `border-color 200ms ${EASE}`,
   },
   formRow: {
     display: 'grid',
@@ -328,23 +343,24 @@ const styles = {
   },
   label: {
     display: 'block',
-    fontSize: '0.75rem',
-    fontWeight: 600,
+    fontSize: '0.8125rem',
+    fontWeight: 500,
     color: 'var(--text-muted)',
     textTransform: 'uppercase',
-    letterSpacing: '0.5px',
+    letterSpacing: '0.06em',
     marginBottom: '0.45rem',
   },
   input: {
     width: '100%',
-    background: 'var(--surface2)',
+    background: 'var(--surface)',
     border: '1px solid var(--border)',
     borderRadius: 10,
     padding: '0.7rem 1rem',
     color: 'var(--text)',
     fontSize: '0.9rem',
     outline: 'none',
-    transition: 'border-color 0.2s',
+    transition: `border-color 200ms ${EASE}`,
+    boxSizing: 'border-box',
   },
   tagPicker: {
     display: 'flex',
@@ -359,34 +375,39 @@ const styles = {
     display: 'inline-flex',
     alignItems: 'center',
     gap: '0.3rem',
-    border: '1.5px solid',
+    border: '1px solid',
     fontSize: '0.8rem',
     fontWeight: 500,
     padding: '0.32rem 0.75rem',
     borderRadius: 100,
     cursor: 'pointer',
     whiteSpace: 'nowrap',
-    transition: 'all 0.18s',
+    transition: `all 180ms ${EASE}`,
   },
   error: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.4rem',
     color: 'var(--accent3)',
     fontSize: '0.82rem',
     marginBottom: '0.8rem',
-    padding: '0.5rem 0.8rem',
-    background: 'rgba(192,57,43,0.06)',
+    padding: '0.55rem 0.8rem',
+    background: 'rgba(179,73,47,0.07)',
+    border: '1px solid rgba(179,73,47,0.2)',
     borderRadius: 8,
   },
   submitBtn: {
     width: '100%',
     background: 'var(--accent)',
     color: '#fff',
-    border: 'none',
+    border: '1px solid var(--accent)',
     cursor: 'pointer',
-    fontWeight: 700,
-    fontSize: '1rem',
+    fontFamily: 'var(--font-body)',
+    fontWeight: 500,
+    fontSize: '0.9375rem',
     padding: '0.85rem',
-    borderRadius: 10,
+    borderRadius: 999,
     marginTop: '0.5rem',
-    transition: 'all 0.2s',
+    transition: `background 200ms ${EASE}`,
   },
 }

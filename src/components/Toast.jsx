@@ -9,7 +9,7 @@ export default function Toast({ message }) {
 
   return (
     <div style={{ ...styles.toast, bottom }}>
-      <span style={styles.dot}>●</span>
+      <span style={styles.dot} />
       {message}
     </div>
   )
@@ -21,26 +21,27 @@ const styles = {
     left: '50%',
     transform: 'translateX(-50%)',
     background: 'var(--surface)',
-    borderLeft: '3px solid var(--accent)',
     border: '1px solid var(--border)',
-    borderLeftWidth: 3,
-    borderLeftColor: 'var(--accent)',
+    borderLeft: '3px solid var(--accent)',
     color: 'var(--text)',
     padding: '0.7rem 1.3rem 0.7rem 1rem',
-    borderRadius: 12,
+    borderRadius: 10,
+    fontFamily: 'var(--font-body)',
     fontSize: '0.86rem',
-    fontWeight: 600,
+    fontWeight: 500,
     zIndex: 700,
     whiteSpace: 'nowrap',
-    boxShadow: '0 4px 24px rgba(42,42,31,0.14)',
+    boxShadow: 'var(--card-glow)',
     animation: 'toastSlide 0.25s ease both',
     display: 'flex',
     alignItems: 'center',
-    gap: '0.5rem',
+    gap: '0.55rem',
   },
   dot: {
-    fontSize: '0.45rem',
-    color: 'var(--accent)',
+    width: 6,
+    height: 6,
+    borderRadius: '50%',
+    background: 'var(--accent)',
     flexShrink: 0,
   },
 }

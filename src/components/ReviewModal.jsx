@@ -1,29 +1,33 @@
 import React, { useState } from 'react'
 import { submitReview } from '../api/reviews'
+import { StarIcon, XIcon, AlertCircleIcon } from './Icons'
+
+const STAR_COLOR = '#b8860b'
 
 function StarRating({ value, onChange }) {
   const [hovered, setHovered] = useState(0)
   return (
     <div style={{ display: 'flex', gap: '0.3rem', justifyContent: 'center', margin: '1rem 0' }}>
-      {[1, 2, 3, 4, 5].map(star => (
-        <button
-          key={star}
-          type="button"
-          style={{
-            background: 'none', border: 'none', cursor: 'pointer',
-            fontSize: '2rem',
-            color: star <= (hovered || value) ? '#f0c040' : 'var(--border)',
-            transition: 'color 0.15s, transform 0.1s',
-            transform: star <= (hovered || value) ? 'scale(1.15)' : 'scale(1)',
-            padding: '0.1rem',
-          }}
-          onMouseEnter={() => setHovered(star)}
-          onMouseLeave={() => setHovered(0)}
-          onClick={() => onChange(star)}
-        >
-          ★
-        </button>
-      ))}
+      {[1, 2, 3, 4, 5].map(star => {
+        const filled = star <= (hovered || value)
+        return (
+          <button
+            key={star}
+            type="button"
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              transition: 'transform 150ms cubic-bezier(0.22,0.61,0.36,1)',
+              transform: filled ? 'scale(1.1)' : 'scale(1)',
+              padding: '0.15rem',
+            }}
+            onMouseEnter={() => setHovered(star)}
+            onMouseLeave={() => setHovered(0)}
+            onClick={() => onChange(star)}
+          >
+            <StarIcon size={28} fill={filled ? STAR_COLOR : 'none'} style={{ color: filled ? STAR_COLOR : 'var(--border)' }} />
+          </button>
+        )
+      })}
     </div>
   )
 }
@@ -53,18 +57,18 @@ export default function ReviewModal({ ride, onClose, onSubmitted }) {
   }
 
   return (
-    <div style={styles.overlay} onClick={onClose}>
-      <div style={styles.modal} onClick={e => e.stopPropagation()}>
+    <div className="overlay-fade" style={styles.overlay} onClick={onClose}>
+      <div className="modal-enter" style={styles.modal} onClick={e => e.stopPropagation()}>
         <div style={styles.header}>
           <h2 style={styles.title}>드라이버 평가</h2>
-          <button style={styles.closeBtn} onClick={onClose}>✕</button>
+          <button style={styles.closeBtn} onClick={onClose}><XIcon size={15} /></button>
         </div>
 
         <div style={styles.routeInfo}>
           <span style={styles.routeText}>
             {ride.departureLocation || '출발지'} → {ride.destinationLocation || '목적지'}
           </span>
-          <span style={styles.rideId}>운행 #{ride.id}</span>
+          <span style={styles.rideId}>운행 #<span className="tabular-nums">{ride.id}</span></span>
         </div>
 
         <form onSubmit={handleSubmit}>
@@ -81,9 +85,14 @@ export default function ReviewModal({ ride, onClose, onSubmitted }) {
             maxLength={500}
             rows={4}
           />
-          <div style={styles.charCount}>{comment.length}/500</div>
+          <div style={styles.charCount} className="tabular-nums">{comment.length}/500</div>
 
-          {err && <div style={styles.errorBox}>{err}</div>}
+          {err && (
+            <div style={styles.errorBox}>
+              <AlertCircleIcon size={14} style={{ flexShrink: 0 }} />
+              {err}
+            </div>
+          )}
 
           <div style={styles.actions}>
             <button type="button" style={styles.cancelBtn} onClick={onClose}>취소</button>
@@ -97,75 +106,98 @@ export default function ReviewModal({ ride, onClose, onSubmitted }) {
   )
 }
 
+const EASE = 'cubic-bezier(0.22, 0.61, 0.36, 1)'
+
 const styles = {
   overlay: {
     position: 'fixed', inset: 0,
-    background: 'rgba(0,0,0,0.55)',
+    background: 'rgba(26,34,51,0.45)',
+    backdropFilter: 'blur(4px)',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     zIndex: 1000, padding: '1rem',
   },
   modal: {
     background: 'var(--surface)',
-    borderRadius: 20,
+    border: '1px solid var(--border)',
+    borderRadius: 12,
     padding: '1.8rem',
     width: '100%', maxWidth: 400,
-    boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+    boxShadow: 'var(--card-glow)',
   },
   header: {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
     marginBottom: '1rem',
   },
   title: {
-    fontSize: '1.1rem', fontWeight: 700, color: 'var(--text)', margin: 0,
+    fontFamily: 'var(--font-display)',
+    fontSize: '1.15rem', fontWeight: 500, letterSpacing: '-0.02em',
+    color: 'var(--text)', margin: 0,
   },
   closeBtn: {
-    background: 'none', border: 'none', cursor: 'pointer',
-    fontSize: '1.1rem', color: 'var(--text-muted)', padding: '0.2rem',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: 'none',
+    border: '1px solid var(--border)',
+    cursor: 'pointer',
+    color: 'var(--text-muted)',
+    padding: '0.4rem',
+    borderRadius: 8,
+    transition: `border-color 200ms ${EASE}`,
   },
   routeInfo: {
     display: 'flex', flexDirection: 'column', alignItems: 'center',
     gap: '0.3rem', marginBottom: '0.5rem',
   },
   routeText: {
-    fontSize: '0.92rem', fontWeight: 600, color: 'var(--text)',
+    fontSize: '0.92rem', fontWeight: 500, color: 'var(--text)',
   },
   rideId: {
+    fontFamily: 'var(--font-mono)',
     fontSize: '0.72rem', color: 'var(--text-muted)',
   },
   ratingLabel: {
-    textAlign: 'center', fontSize: '0.9rem', fontWeight: 600,
-    color: '#f0c040', marginBottom: '1rem',
+    textAlign: 'center', fontSize: '0.9rem', fontWeight: 500,
+    color: STAR_COLOR, marginBottom: '1rem',
   },
   textarea: {
     width: '100%', boxSizing: 'border-box',
     border: '1px solid var(--border)', borderRadius: 10,
     padding: '0.8rem', fontSize: '0.85rem',
-    fontFamily: 'inherit', color: 'var(--text)',
-    background: 'var(--surface2)', resize: 'vertical',
+    fontFamily: 'var(--font-body)', color: 'var(--text)',
+    background: 'var(--surface)', resize: 'vertical',
     outline: 'none',
+    transition: `border-color 200ms ${EASE}`,
   },
   charCount: {
-    textAlign: 'right', fontSize: '0.72rem', color: 'var(--text-muted)',
+    textAlign: 'right', fontSize: '0.72rem', color: 'var(--text-dim)',
     marginTop: '0.3rem',
   },
   errorBox: {
-    color: 'var(--accent3, #c0392b)', fontSize: '0.83rem',
-    background: 'rgba(192,57,43,0.06)', borderRadius: 8,
+    display: 'flex', alignItems: 'center', gap: '0.4rem',
+    color: 'var(--accent3)', fontSize: '0.83rem',
+    background: 'rgba(179,73,47,0.07)',
+    border: '1px solid rgba(179,73,47,0.2)',
+    borderRadius: 8,
     padding: '0.6rem 0.8rem', marginTop: '0.8rem',
   },
   actions: {
     display: 'flex', gap: '0.6rem', marginTop: '1.2rem',
   },
   cancelBtn: {
-    flex: 1, background: 'var(--surface2)',
-    border: '1px solid var(--border)', borderRadius: 10,
+    flex: 1, background: 'var(--surface)',
+    border: '1px solid var(--border)', borderRadius: 8,
     padding: '0.7rem', fontSize: '0.88rem',
-    fontWeight: 600, cursor: 'pointer', color: 'var(--text-muted)',
+    fontFamily: 'var(--font-body)',
+    fontWeight: 500, cursor: 'pointer', color: 'var(--text-muted)',
+    transition: `border-color 200ms ${EASE}`,
   },
   submitBtn: {
     flex: 2, background: 'var(--accent)', color: '#fff',
-    border: 'none', borderRadius: 10,
+    border: '1px solid var(--accent)', borderRadius: 999,
     padding: '0.7rem', fontSize: '0.88rem',
-    fontWeight: 700, cursor: 'pointer',
+    fontFamily: 'var(--font-body)',
+    fontWeight: 500, cursor: 'pointer',
+    transition: `background 200ms ${EASE}`,
   },
 }

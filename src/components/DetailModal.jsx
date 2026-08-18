@@ -4,6 +4,9 @@ import { fmtPrice } from './CarpoolCard'
 import { fetchComments, createComment, removeComment } from '../api/comments'
 import { getPostApplications, acceptApplication, rejectApplication, cancelAcceptApplication, cancelRejectApplication } from '../api/applications'
 import { useIsMobile } from '../hooks/useMobile'
+import { XIcon, StarIcon, CheckIcon } from './Icons'
+
+const EASE = 'cubic-bezier(0.22, 0.61, 0.36, 1)'
 
 const KAKAO_JS_KEY = import.meta.env.VITE_KAKAO_JS_KEY
 
@@ -57,13 +60,13 @@ function RouteMap({ fromLat, fromLng, toLat, toLng }) {
     // 출발지 마커
     if (hasFrom) {
       const el = document.createElement('div')
-      el.innerHTML = `<div style="width:14px;height:14px;border-radius:50%;background:#6b7c3f;border:2.5px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3);"></div>`
+      el.innerHTML = `<div style="width:12px;height:12px;border-radius:50%;background:#4f46e5;border:2px solid white;box-shadow:0 1px 4px rgba(26,34,51,0.3);"></div>`
       new kakao.maps.CustomOverlay({ position: new kakao.maps.LatLng(fromLat, fromLng), content: el, yAnchor: 0.5 }).setMap(map)
     }
     // 도착지 마커
     if (hasTo) {
       const el = document.createElement('div')
-      el.innerHTML = `<div style="width:14px;height:14px;border-radius:50%;background:#c0392b;border:2.5px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3);"></div>`
+      el.innerHTML = `<div style="width:12px;height:12px;border-radius:50%;background:#1a2233;border:2px solid white;box-shadow:0 1px 4px rgba(26,34,51,0.3);"></div>`
       new kakao.maps.CustomOverlay({ position: new kakao.maps.LatLng(toLat, toLng), content: el, yAnchor: 0.5 }).setMap(map)
     }
 
@@ -81,9 +84,9 @@ function RouteMap({ fromLat, fromLng, toLat, toLng }) {
 
         new kakao.maps.Polyline({
           path,
-          strokeWeight: 4,
-          strokeColor: '#6b7c3f',
-          strokeOpacity: 0.85,
+          strokeWeight: 3,
+          strokeColor: '#4f46e5',
+          strokeOpacity: 0.8,
           strokeStyle: coords ? 'solid' : 'dashed', // 실제 경로는 실선, fallback은 점선
         }).setMap(map)
       })
@@ -96,7 +99,7 @@ function RouteMap({ fromLat, fromLng, toLat, toLng }) {
     <div style={mapStyle}>
       <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
       {!sdkReady && (
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.82rem', color: 'var(--text-muted)', background: '#f5f5f0' }}>
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.82rem', color: 'var(--text-muted)', background: 'var(--surface2)' }}>
           지도 불러오는 중...
         </div>
       )}
@@ -255,16 +258,17 @@ export default function DetailModal({ post, onClose, onJoin, currentMemberId }) 
     : styles.overlay
 
   const modalStyle = isMobile
-    ? { ...styles.modal, borderRadius: '20px 20px 0 0', maxWidth: '100%', animation: 'sheetUp 0.3s cubic-bezier(0.32,0.72,0,1) both' }
-    : { ...styles.modal, animation: 'modalEnter 0.22s cubic-bezier(0.34,1.56,0.64,1) both' }
+    ? { ...styles.modal, borderRadius: '14px 14px 0 0', maxWidth: '100%' }
+    : styles.modal
+  const modalClass = isMobile ? 'sheet-enter' : 'modal-enter'
 
   return (
     <div className="overlay-fade" style={overlayStyle} onClick={handleOverlayClick}>
-      <div style={modalStyle}>
+      <div className={modalClass} style={modalStyle}>
         {isMobile && <div style={styles.dragHandle} />}
         <div style={styles.header}>
           <div style={styles.title}>카풀 상세</div>
-          <button style={styles.closeBtn} onClick={onClose}>✕</button>
+          <button style={styles.closeBtn} onClick={onClose}><XIcon size={16} /></button>
         </div>
 
         <RouteMap
@@ -281,18 +285,18 @@ export default function DetailModal({ post, onClose, onJoin, currentMemberId }) 
             <span>{post.to}</span>
           </div>
           <div style={styles.metaGrid}>
-            <MetaItem label="날짜" value={post.date} />
-            <MetaItem label="시간" value={post.time} />
-            <MetaItem label="모집 인원" value={`${post.seats}명 (${post.filled}명 참여중)`} />
-            <MetaItem label="1인 분담금" value={fmtPrice(post.price)} accent />
+            <MetaItem label="날짜" value={post.date} mono />
+            <MetaItem label="시간" value={post.time} mono />
+            <MetaItem label="모집 인원" value={`${post.filled}/${post.seats}명`} mono />
+            <MetaItem label="1인 분담금" value={fmtPrice(post.price)} accent mono />
           </div>
           {post.tags?.length > 0 && (
             <div style={styles.tags}>
               {post.tags.map(tag => {
                 const t = getTagStyle(tag?.name)
                 return (
-                  <span key={tag.id} style={{ ...styles.tagPill, background: t.bg, color: t.tc, borderColor: `${t.tc}22` }}>
-                    {t.emoji} {tag.name}
+                  <span key={tag.id} style={{ ...styles.tagPill, background: t.bg, color: t.tc, borderColor: `${t.tc}33` }}>
+                    {tag.name}
                   </span>
                 )
               })}
@@ -309,8 +313,11 @@ export default function DetailModal({ post, onClose, onJoin, currentMemberId }) 
           </div>
           <div>
             <div style={styles.driverName}>{post.nickname || '익명'}</div>
-            <div style={styles.driverRating}>★★★★★ {post.rating}</div>
-            <div style={styles.driverTrips}>총 {post.trips}회 탑승</div>
+            <div style={styles.driverRating}>
+              <StarIcon size={13} fill="#b8860b" style={{ color: '#b8860b' }} />
+              <span className="tabular-nums">{post.rating}</span>
+            </div>
+            <div style={styles.driverTrips}>총 <span className="tabular-nums">{post.trips}</span>회 탑승</div>
           </div>
         </div>
 
@@ -438,23 +445,29 @@ function JoinButton({ full, onJoin }) {
       style={{
         ...styles.joinBtn,
         ...(full || loading ? styles.joinBtnDisabled : {}),
-        ...(done ? { background: '#27ae60', borderColor: '#27ae60' } : {}),
-        transition: 'background 0.2s, transform 0.15s',
-        transform: done ? 'scale(1.02)' : 'scale(1)',
+        ...(done ? { background: '#2f7a4f', borderColor: '#2f7a4f' } : {}),
+        transition: `background 200ms ${EASE}, transform 200ms ${EASE}`,
+        transform: done ? 'scale(1.01)' : 'scale(1)',
       }}
       disabled={full || loading}
       onClick={handleClick}
     >
-      {full ? '마감된 카풀입니다' : done ? '✓ 신청 완료!' : loading ? '신청 중...' : '참여 신청하기'}
+      {done && <CheckIcon size={15} />}
+      {full ? '마감된 카풀입니다' : done ? '신청 완료!' : loading ? '신청 중...' : '참여 신청하기'}
     </button>
   )
 }
 
-function MetaItem({ label, value, accent }) {
+function MetaItem({ label, value, accent, mono }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</span>
-      <span style={{ fontSize: '0.9rem', fontWeight: 600, color: accent ? 'var(--accent)' : 'var(--text)' }}>{value}</span>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 500 }}>{label}</span>
+      <span style={{
+        fontSize: '0.9rem',
+        fontWeight: mono ? 500 : 500,
+        fontFamily: mono ? 'var(--font-mono)' : 'var(--font-body)',
+        color: accent ? 'var(--accent)' : 'var(--text)',
+      }} className={mono ? 'tabular-nums' : undefined}>{value}</span>
     </div>
   )
 }
@@ -464,8 +477,8 @@ const styles = {
     position: 'fixed',
     inset: 0,
     zIndex: 600,
-    background: 'rgba(42,42,31,0.5)',
-    backdropFilter: 'blur(8px)',
+    background: 'rgba(26,34,51,0.4)',
+    backdropFilter: 'blur(4px)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -474,13 +487,13 @@ const styles = {
   modal: {
     background: 'var(--surface)',
     border: '1px solid var(--border)',
-    borderRadius: 20,
+    borderRadius: 12,
     width: '100%',
     maxWidth: 540,
     maxHeight: '92vh',
     overflowY: 'auto',
     padding: '1.5rem 1.5rem 2rem',
-    boxShadow: '0 20px 60px rgba(42,42,31,0.15)',
+    boxShadow: 'var(--card-glow)',
   },
   dragHandle: {
     width: 36,
@@ -496,21 +509,28 @@ const styles = {
     marginBottom: '1.2rem',
   },
   title: {
-    fontSize: '1.2rem',
-    fontWeight: 700,
+    fontFamily: 'var(--font-display)',
+    fontSize: '1.25rem',
+    fontWeight: 500,
+    letterSpacing: '-0.02em',
+    color: 'var(--text)',
   },
   closeBtn: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
     background: 'none',
-    border: 'none',
+    border: '1px solid var(--border)',
     color: 'var(--text-muted)',
     cursor: 'pointer',
-    fontSize: '1.3rem',
-    padding: '0.3rem',
-    borderRadius: 6,
+    padding: '0.4rem',
+    borderRadius: 8,
+    transition: `border-color 200ms ${EASE}`,
   },
   routeSection: {
     background: 'var(--surface2)',
-    borderRadius: 12,
+    border: '1px solid var(--border)',
+    borderRadius: 10,
     padding: '1.2rem',
     marginBottom: '1.2rem',
   },
@@ -518,8 +538,10 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     gap: '1rem',
+    fontFamily: 'var(--font-display)',
     fontSize: '1.1rem',
-    fontWeight: 700,
+    fontWeight: 500,
+    letterSpacing: '-0.015em',
     marginBottom: '0.8rem',
     color: 'var(--text)',
   },
@@ -541,10 +563,10 @@ const styles = {
     alignItems: 'center',
     gap: '0.25rem',
     fontSize: '0.72rem',
-    fontWeight: 600,
+    fontWeight: 500,
     padding: '0.22rem 0.6rem',
     borderRadius: 100,
-    border: '1.5px solid',
+    border: '1px solid',
   },
   desc: {
     marginTop: '1rem',
@@ -559,7 +581,8 @@ const styles = {
     alignItems: 'center',
     gap: '1rem',
     background: 'var(--surface2)',
-    borderRadius: 12,
+    border: '1px solid var(--border)',
+    borderRadius: 10,
     padding: '1rem 1.2rem',
     marginBottom: '1.2rem',
   },
@@ -571,25 +594,30 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     fontSize: '1.1rem',
-    fontWeight: 700,
+    fontWeight: 500,
     flexShrink: 0,
   },
   driverName: {
-    fontWeight: 700,
-    marginBottom: '0.2rem',
+    fontWeight: 500,
+    marginBottom: '0.25rem',
     color: 'var(--text)',
   },
   driverRating: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.25rem',
     fontSize: '0.82rem',
     color: '#b8860b',
   },
   driverTrips: {
     fontSize: '0.75rem',
     color: 'var(--text-muted)',
+    marginTop: '0.15rem',
   },
   commentSection: {
     background: 'var(--surface2)',
-    borderRadius: 12,
+    border: '1px solid var(--border)',
+    borderRadius: 10,
     padding: '1rem 1.2rem',
     marginBottom: '1.2rem',
   },
@@ -597,14 +625,15 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     gap: '0.5rem',
-    fontWeight: 700,
+    fontWeight: 500,
     fontSize: '0.9rem',
     marginBottom: '0.8rem',
     color: 'var(--text)',
   },
   commentBadge: {
+    fontFamily: 'var(--font-mono)',
     fontSize: '0.68rem',
-    fontWeight: 600,
+    fontWeight: 500,
     padding: '0.15rem 0.5rem',
     borderRadius: 100,
     background: 'var(--accent-pale)',
@@ -620,6 +649,7 @@ const styles = {
   },
   commentItem: {
     background: 'var(--surface)',
+    border: '1px solid var(--border)',
     borderRadius: 8,
     padding: '0.6rem 0.8rem',
   },
@@ -631,7 +661,7 @@ const styles = {
   },
   commentNickname: {
     fontSize: '0.78rem',
-    fontWeight: 700,
+    fontWeight: 500,
     color: 'var(--text)',
   },
   commentTime: {
@@ -672,64 +702,76 @@ const styles = {
     fontSize: '0.85rem',
     color: 'var(--text)',
     outline: 'none',
+    transition: `border-color 200ms ${EASE}`,
   },
   commentSendBtn: {
     background: 'var(--accent)',
     color: '#fff',
-    border: 'none',
+    border: '1px solid var(--accent)',
     borderRadius: 8,
     padding: '0.55rem 1rem',
+    fontFamily: 'var(--font-body)',
     fontSize: '0.85rem',
-    fontWeight: 600,
+    fontWeight: 500,
     cursor: 'pointer',
+    transition: `background 200ms ${EASE}`,
   },
   commentSendBtnDisabled: {
-    background: 'var(--border)',
-    color: 'var(--text-muted)',
+    background: 'var(--surface2)',
+    borderColor: 'var(--border)',
+    color: 'var(--text-dim)',
     cursor: 'not-allowed',
   },
   commentErrorMsg: {
     fontSize: '0.78rem',
-    color: 'var(--accent3, #c0392b)',
-    background: 'rgba(192,57,43,0.06)',
+    color: 'var(--accent3)',
+    background: 'rgba(179,73,47,0.07)',
+    border: '1px solid rgba(179,73,47,0.2)',
     borderRadius: 6,
     padding: '0.4rem 0.7rem',
     marginBottom: '0.5rem',
   },
   joinBtn: {
     width: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '0.4rem',
     background: 'var(--accent)',
     color: '#fff',
-    border: 'none',
+    border: '1px solid var(--accent)',
     cursor: 'pointer',
-    fontWeight: 700,
-    fontSize: '1rem',
+    fontFamily: 'var(--font-body)',
+    fontWeight: 500,
+    fontSize: '0.9375rem',
     padding: '0.85rem',
-    borderRadius: 10,
-    transition: 'all 0.2s',
+    borderRadius: 999,
   },
   joinBtnDisabled: {
-    background: 'var(--border)',
-    color: 'var(--text-muted)',
+    background: 'var(--surface2)',
+    borderColor: 'var(--border)',
+    color: 'var(--text-dim)',
     cursor: 'not-allowed',
   },
   appSection: {
     background: 'var(--surface2)',
-    borderRadius: 12,
+    border: '1px solid var(--border)',
+    borderRadius: 10,
     padding: '1rem 1.2rem',
   },
   appHeader: {
     display: 'flex',
     alignItems: 'center',
     gap: '0.5rem',
-    fontWeight: 700,
+    fontWeight: 500,
     fontSize: '0.9rem',
     marginBottom: '0.8rem',
     color: 'var(--text)',
   },
   appBadge: {
+    fontFamily: 'var(--font-mono)',
     fontSize: '0.68rem',
-    fontWeight: 600,
+    fontWeight: 500,
     padding: '0.15rem 0.5rem',
     borderRadius: 100,
     background: 'var(--accent-pale)',
@@ -745,6 +787,7 @@ const styles = {
     justifyContent: 'space-between',
     alignItems: 'center',
     background: 'var(--surface)',
+    border: '1px solid var(--border)',
     borderRadius: 8,
     padding: '0.6rem 0.8rem',
   },
@@ -755,25 +798,25 @@ const styles = {
   },
   appNickname: {
     fontSize: '0.85rem',
-    fontWeight: 600,
+    fontWeight: 500,
     color: 'var(--text)',
   },
   appStatus: {
     fontSize: '0.7rem',
-    fontWeight: 600,
+    fontWeight: 500,
     padding: '0.15rem 0.5rem',
     borderRadius: 100,
   },
   appStatusPending: {
-    background: 'rgba(184,134,11,0.1)',
-    color: '#b8860b',
+    background: 'var(--surface2)',
+    color: 'var(--text-muted)',
   },
   appStatusAccepted: {
     background: 'var(--accent-pale)',
     color: 'var(--accent)',
   },
   appStatusRejected: {
-    background: 'rgba(192,57,43,0.1)',
+    background: 'rgba(179,73,47,0.08)',
     color: 'var(--accent3)',
   },
   appBtns: {
@@ -783,31 +826,34 @@ const styles = {
   acceptBtn: {
     background: 'var(--accent)',
     color: '#fff',
-    border: 'none',
+    border: '1px solid var(--accent)',
     borderRadius: 6,
     padding: '0.3rem 0.75rem',
+    fontFamily: 'var(--font-body)',
     fontSize: '0.78rem',
-    fontWeight: 600,
+    fontWeight: 500,
     cursor: 'pointer',
   },
   rejectBtn: {
-    background: 'rgba(192,57,43,0.1)',
+    background: 'rgba(179,73,47,0.08)',
     color: 'var(--accent3)',
     border: 'none',
     borderRadius: 6,
     padding: '0.3rem 0.75rem',
+    fontFamily: 'var(--font-body)',
     fontSize: '0.78rem',
-    fontWeight: 600,
+    fontWeight: 500,
     cursor: 'pointer',
   },
   cancelBtn: {
-    background: 'rgba(120,120,120,0.12)',
+    background: 'var(--surface2)',
     color: 'var(--text-muted)',
-    border: 'none',
+    border: '1px solid var(--border)',
     borderRadius: 6,
     padding: '0.3rem 0.75rem',
+    fontFamily: 'var(--font-body)',
     fontSize: '0.78rem',
-    fontWeight: 600,
+    fontWeight: 500,
     cursor: 'pointer',
   },
   appEmpty: {
